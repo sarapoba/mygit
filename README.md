@@ -19,6 +19,10 @@
 3. [리텐션 설계](docs/03-retention-design.md) — 일/주/월 단위 플레이 루프, 라이브 운영, 소셜
 4. [수익화 및 경제 설계](docs/04-monetization.md) — IAP 상품 구성, 가격 정책, 인게임 경제 밸런스
 5. [개발 로드맵 및 KPI](docs/05-roadmap.md) — 마일스톤, 팀 구성, 기술 스택, 목표 지표
+6. [경제 밸런스 시트 v1](docs/06-economy-balance.md) — 생산·비용 공식, 페이싱 목표, 웨이브 난이도, 검증 루틴
+7. [시즌 1 상세 기획](docs/07-season1-content.md) — "수확제의 계절" 패스 트랙, 주간 이벤트 캘린더, 성공 지표
+8. [프로토타입 백로그](docs/08-prototype-backlog.md) — Phase 0 스프린트 계획과 검증 게이트
+9. [아트 스타일 가이드 v1](docs/09-art-style-guide.md) — 기술 규격, 팔레트/발광 규칙, 코스메틱 제작 기준
 
 ## 한 줄 요약
 
