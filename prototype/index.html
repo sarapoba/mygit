@@ -1,0 +1,661 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>타이니 아일 — 코어 루프 프로토타입</title>
+<style>
+  :root{
+    --night0:#0a1230; --night1:#050a1c;
+    --panel:#2b1f13; --panel2:#3a2a1b; --line:#6b4c30;
+    --ink:#e8d9b0; --ink-dim:#a8946c;
+    --ember:#ffb054; --ember2:#ff8c2e;
+    --threat:#86ecdf; --hp:#e5534b; --ok:#8fd06a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(120% 90% at 50% 0%, var(--night0), var(--night1) 70%);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    overflow:hidden; user-select:none; -webkit-user-select:none;
+  }
+  #app{height:100dvh;display:flex;flex-direction:column;max-width:560px;margin:0 auto}
+  /* 상단 자원 바 */
+  #top{
+    display:flex;gap:6px;align-items:center;justify-content:center;
+    padding:8px 10px 4px;font-variant-numeric:tabular-nums;flex-wrap:wrap;
+  }
+  .res{
+    background:var(--panel);border:1px solid var(--line);border-radius:6px;
+    padding:3px 9px;font-size:13px;display:flex;gap:5px;align-items:center;white-space:nowrap;
+  }
+  .res b{font-weight:600}
+  .res .dRate{color:var(--ok);font-size:11px}
+  #popChip{color:var(--ink-dim)}
+  /* 캔버스 */
+  #stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;position:relative}
+  canvas{image-rendering:pixelated;touch-action:none;max-width:100%;max-height:100%}
+  /* 배너 */
+  #banner{
+    position:absolute;left:0;right:0;top:16%;text-align:center;pointer-events:none;
+    font-size:22px;font-weight:700;letter-spacing:.08em;color:var(--ember);
+    text-shadow:0 2px 12px rgba(0,0,0,.8);opacity:0;transition:opacity .5s;
+  }
+  #banner small{display:block;font-size:13px;font-weight:400;color:var(--ink);margin-top:6px;letter-spacing:0}
+  /* 하단 트레이 */
+  #tray{
+    background:linear-gradient(#3a2a1b,#2b1f13);
+    border-top:2px solid var(--line);
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    min-height:158px;
+  }
+  #goal{font-size:12px;color:var(--ink-dim);margin-bottom:8px;letter-spacing:.02em}
+  #goal b{color:var(--ember)}
+  #panel{min-height:96px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  button{
+    font:inherit;color:var(--ink);
+    background:linear-gradient(#5a4127,#3a2a1b);
+    border:1px solid var(--line);border-bottom-width:3px;border-radius:8px;
+    padding:8px 12px;font-size:13px;cursor:pointer;
+  }
+  button:active{transform:translateY(1px);border-bottom-width:2px}
+  button:disabled{opacity:.4;pointer-events:none}
+  button.accent{background:linear-gradient(#a8642a,#7a4116);border-color:#c98a3e;color:#ffe9c4}
+  button:focus-visible{outline:2px solid var(--ember);outline-offset:1px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:8px 10px;font-size:12px;min-width:96px;cursor:pointer;
+  }
+  .card:active{background:#241a10}
+  .card h4{margin:0 0 3px;font-size:13px;color:var(--ember)}
+  .card .cost{color:var(--ink-dim);font-variant-numeric:tabular-nums}
+  .card.no{opacity:.45}
+  .hint{font-size:12px;color:var(--ink-dim);margin-top:6px;line-height:1.5}
+  #hpWrap{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+  .bar{flex:1;height:10px;background:#1a1209;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--hp);transition:width .2s}
+  #dayBar i{background:linear-gradient(90deg,var(--ember2),var(--ember))}
+  h3{margin:0 0 6px;font-size:14px;letter-spacing:.04em}
+  .tag{font-size:11px;color:var(--threat)}
+  /* 인트로 */
+  #intro{
+    position:absolute;inset:0;background:rgba(5,10,28,.92);z-index:10;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  #intro .box{max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
+  #intro h1{font-size:20px;color:var(--ember);margin:0 0 10px;letter-spacing:.06em}
+  #intro p{font-size:13px;line-height:1.7;margin:8px 0;color:var(--ink)}
+  #intro .k{color:var(--threat)}
+</style>
+
+<div id="app">
+  <div id="top">
+    <span class="res">🌾 <b id="rFood">0</b></span>
+    <span class="res">🪵 <b id="rWood">0</b></span>
+    <span class="res">⛏ <b id="rStone">0</b></span>
+    <span class="res">✨ <b id="rEss">0</b></span>
+    <span class="res" id="popChip">👥 <b id="rPop">0/0</b></span>
+  </div>
+  <div id="stage">
+    <canvas id="cv" width="660" height="500"></canvas>
+    <div id="banner"></div>
+    <div id="intro">
+      <div class="box">
+        <h1>타이니 아일 · 프로토타입 v0.1</h1>
+        <p>꺼져가는 화톳불이 이 섬의 마지막 빛입니다.</p>
+        <p>☀️ <b>낮</b> — 빈 타일을 탭해 밭·벌목장·오두막을 짓고 자원을 모으세요. 화톳불을 강화하면 새 건물이 열립니다.</p>
+        <p>🌙 <b>밤</b> — <span class="k">스켈레톤</span>이 섬 가장자리에서 몰려옵니다. 영웅이 자동으로 싸우며, 밤에는 타일을 탭해 영웅을 이동시킬 수 있습니다.</p>
+        <p>목표: <b style="color:var(--ember)">화톳불 Lv5</b> 달성 후 그 밤에서 살아남기.</p>
+        <div class="row" style="margin-top:14px">
+          <button class="accent" id="btnStart" style="flex:1">불을 지핀다</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="tray">
+    <div id="hpWrap">
+      <span>🔥 화톳불</span><div class="bar"><i id="fireBar" style="width:100%"></i></div>
+      <span id="phaseLabel">☀️ 낮</span><div class="bar" id="dayBar" style="max-width:90px"><i style="width:0%"></i></div>
+    </div>
+    <div id="goal"></div>
+    <div id="panel"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   밸런스 테이블 — docs/06-economy-balance.md 미러 (데모 배속 적용)
+   - 생산: 문서의 '분당' 수치를 데모에서는 '6초당'으로 환산 (10배속)
+   - 웨이브 예산: 40 × 1.18^화톳불Lv (§6.4 원공식 그대로)
+   - 영웅 승급 정수: 문서 [30,80,200,500]의 데모 축약 [10,30,80,200]
+   ============================================================ */
+const N = 9, CENTER = 4;
+const BAL = {
+  dayLength: 75,
+  bonfire: {
+    maxLv: 5, hp: 150,
+    up: [ null,
+      {cost:{wood:50},           time:10},
+      {cost:{wood:120,stone:45}, time:14},
+      {cost:{wood:250,stone:110},time:18},
+      {cost:{wood:480,stone:230},time:24} ],
+  },
+  waveBudget: lv => Math.round(40 * Math.pow(1.18, lv)),
+  buildings: {
+    farm:  {name:'밀밭',   icon:'🌾', cost:{wood:30},          time:6,  prod:{food:.70}, workers:1, unlock:1, desc:'식량 생산 (주민 1)'},
+    lumber:{name:'벌목장', icon:'🪵', cost:{food:40},          time:6,  prod:{wood:.50}, workers:1, unlock:1, desc:'목재 생산 (주민 1)'},
+    hut:   {name:'오두막', icon:'🏠', cost:{wood:60,food:20},  time:8,  pop:2,           unlock:1, desc:'주민 +2'},
+    quarry:{name:'채석장', icon:'⛏', cost:{wood:80},          time:10, prod:{stone:.35},workers:1, unlock:2, desc:'석재 생산 (주민 1)'},
+    wall:  {name:'방벽',   icon:'🧱', cost:{stone:15},         time:4,  hp:120,          unlock:2, desc:'몬스터의 길을 막는다'},
+    tower: {name:'화살탑', icon:'🏹', cost:{wood:60,stone:40}, time:12, hp:90, range:2.6, dmg:8, rate:1.1, unlock:3, desc:'자동 사격'},
+  },
+  hero: { promote:[10,30,80,200], hp:s=>60+40*s, dmg:s=>10+6*s, spd:1.7, atkRate:.8 },
+  mobs: {
+    soldier:{name:'스켈레톤 병사', hp:30, dmg:6,  spd:.50, pts:10},
+    wolf:   {name:'뼈늑대',        hp:18, dmg:5,  spd:.95, pts:12, min:55},
+    knight: {name:'스켈레톤 기사', hp:90, dmg:12, spd:.40, pts:35, min:70},
+  },
+  loseRate:.10,
+};
+
+/* ---------- 상태 ---------- */
+let S;
+function newState(){
+  const grid=[];
+  for(let x=0;x<N;x++){ grid[x]=[]; for(let y=0;y<N;y++) grid[x][y]=null; }
+  const put=(x,y,t,extra)=>grid[x][y]=Object.assign({t},extra||{});
+  put(CENTER,CENTER,'bonfire');
+  put(3,5,'farm'); put(5,3,'hut');
+  [[0,1],[1,0],[7,0],[8,1],[0,6],[1,8],[8,7],[6,8],[2,0],[0,3]].forEach(p=>put(p[0],p[1],'tree'));
+  return {
+    res:{food:60, wood:80, stone:0, ess:0},
+    grid, order:[[3,5]],           // 생산 건물 배치 순서 (주민 배정 우선순위)
+    day:1, phase:'day', tDay:0, nights:0,
+    fireLv:1, fireHp:BAL.bonfire.hp,
+    hero:{x:4.8,y:5.2,star:0,hp:BAL.hero.hp(0),cd:0,move:null,dead:0},
+    mobs:[], spawnQ:[], spawnT:0,
+    queue:null,                    // {x,y,kind,remain,total}  kind: 건물키|'fire'|'chop'
+    sel:null, speed:1, cleared:false,
+  };
+}
+
+/* ---------- 저장 ---------- */
+const SAVE='tinyisle-proto-v1';
+function save(){ try{ if(S&&!S.cleared) localStorage.setItem(SAVE, JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const j=localStorage.getItem(SAVE); if(j){ const s=JSON.parse(j); if(s&&s.grid) return s; } }catch(e){} return null; }
+
+/* ---------- 유틸 ---------- */
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const fmt=n=>Math.floor(n);
+function canPay(cost){ return Object.keys(cost).every(k=>S.res[k]>=cost[k]); }
+function pay(cost){ for(const k in cost) S.res[k]-=cost[k]; }
+function costStr(cost){ const ic={food:'🌾',wood:'🪵',stone:'⛏',ess:'✨'}; return Object.keys(cost).map(k=>ic[k]+cost[k]).join(' '); }
+function eachTile(fn){ for(let x=0;x<N;x++)for(let y=0;y<N;y++){ const c=S.grid[x][y]; if(c) fn(x,y,c); } }
+function countT(t){ let n=0; eachTile((x,y,c)=>{ if(c.t===t) n++; }); return n; }
+
+/* ---------- 인구/생산 ---------- */
+function popMax(){ return 2 + 2*countT('hut'); }
+function assignWorkers(){
+  let free=popMax(); const map={};
+  for(const [x,y] of S.order){
+    const c=S.grid[x]&&S.grid[x][y]; if(!c) continue;
+    const B=BAL.buildings[c.t]; if(!B||!B.prod) continue;
+    const w=Math.min(B.workers, free); free-=w; map[x+','+y]=w;
+  }
+  return {map, used:popMax()-free};
+}
+function prodRates(){
+  const {map}=assignWorkers(); const r={food:0,wood:0,stone:0};
+  for(const key in map){ const [x,y]=key.split(',').map(Number);
+    const B=BAL.buildings[S.grid[x][y].t];
+    for(const k in B.prod) r[k]+=B.prod[k]*map[key];
+  }
+  return r;
+}
+
+/* ---------- 목표 (FTUE 가이드) ---------- */
+const GOALS=[
+  {t:'밀밭을 하나 더 지으세요 (빈 타일 탭)', ok:()=>countT('farm')>=2},
+  {t:'벌목장을 지어 목재를 확보하세요',      ok:()=>countT('lumber')>=1},
+  {t:'첫 밤에서 살아남으세요',               ok:()=>S.nights>=1},
+  {t:'화톳불을 Lv2로 강화하세요 (화톳불 탭)', ok:()=>S.fireLv>=2},
+  {t:'채석장을 지어 석재를 캐세요',          ok:()=>countT('quarry')>=1},
+  {t:'방벽 3개로 길목을 막으세요',           ok:()=>countT('wall')>=3},
+  {t:'화톳불 Lv3 → 화살탑을 세우세요',       ok:()=>countT('tower')>=1},
+  {t:'영웅을 ★1로 승급시키세요 (영웅 버튼)', ok:()=>S.hero.star>=1},
+  {t:'화톳불 Lv5를 달성하고 그 밤에서 살아남으세요!', ok:()=>S.cleared},
+];
+function goalText(){
+  for(const g of GOALS) if(!g.ok()) return '다음 목표 · <b>'+g.t+'</b>';
+  return '<b>프로토타입 클리어!</b> 플레이해주셔서 감사합니다 🎉';
+}
+
+/* ---------- 밤 웨이브 ---------- */
+function startNight(){
+  S.phase='night'; S.sel=null;
+  let budget=BAL.waveBudget(S.fireLv);
+  const q=[]; const keys=Object.keys(BAL.mobs);
+  while(budget>0){
+    const pool=keys.filter(k=>{ const m=BAL.mobs[k]; return m.pts<=budget && (!m.min||BAL.waveBudget(S.fireLv)>=m.min); });
+    if(!pool.length) break;
+    const k=pool[Math.floor(Math.random()*pool.length)];
+    q.push(k); budget-=BAL.mobs[k].pts;
+  }
+  S.spawnQ=q; S.spawnT=0;
+  banner('밤 '+S.day+' — 어둠이 몰려온다', '탭으로 영웅 이동 · 적 '+q.length);
+}
+function edgePos(){
+  const side=Math.floor(Math.random()*4), r=Math.random()*(N-1);
+  if(side===0)return{x:r,y:0}; if(side===1)return{x:r,y:N-1};
+  if(side===2)return{x:0,y:r}; return{x:N-1,y:r};
+}
+function spawnMob(kind){
+  const p=edgePos(), m=BAL.mobs[kind];
+  S.mobs.push({kind, x:p.x, y:p.y, hp:m.hp, cd:Math.random()*.5, flash:0});
+}
+function endNight(win){
+  S.mobs=[]; S.spawnQ=[];
+  if(win){
+    S.nights++;
+    const ess=3+2*S.fireLv;
+    S.res.ess+=ess;
+    if(S.fireLv>=BAL.bonfire.maxLv && !S.cleared){
+      S.cleared=true;
+      banner('🎉 프로토타입 클리어!', '생존한 밤 '+S.nights+' · 이 재미가 코어 루프의 원형입니다');
+    } else banner('새벽 — 방어 성공!', '어둠의 정수 +'+ess);
+  } else {
+    for(const k of ['food','wood','stone']) S.res[k]=Math.floor(S.res[k]*(1-BAL.loseRate));
+    banner('화톳불이 꺼졌다…', '자원 10% 손실 · 주민들이 불씨를 되살렸다');
+  }
+  S.phase='day'; S.tDay=0; S.day++;
+  S.fireHp=BAL.bonfire.hp;
+  const h=S.hero; h.dead=0; h.hp=BAL.hero.hp(h.star); h.move=null; h.x=4.8; h.y=5.2;
+  save(); renderPanel();
+}
+
+/* ---------- 시뮬레이션 ---------- */
+function structAt(x,y){
+  if(x<0||y<0||x>=N||y>=N) return null;
+  const c=S.grid[x][y];
+  return (c&&(c.t==='wall'||c.t==='tower'))?c:null;
+}
+function tick(dt){
+  // 생산
+  if(S.phase==='day'){
+    const r=prodRates();
+    for(const k in r) S.res[k]+=r[k]*dt;
+    S.tDay+=dt;
+    if(S.tDay>=BAL.dayLength) startNight();
+  }
+  // 건설 큐
+  if(S.queue){
+    S.queue.remain-=dt;
+    if(S.queue.remain<=0){
+      const q=S.queue; S.queue=null;
+      if(q.kind==='fire'){ S.fireLv++; banner('화톳불 Lv'+S.fireLv,'다음 밤부터 웨이브가 강해집니다'); }
+      else if(q.kind==='chop'){ S.grid[q.x][q.y]=null; S.res.wood+=20; }
+      else{
+        S.grid[q.x][q.y]={t:q.kind, hp:BAL.buildings[q.kind].hp, cd:0};
+        if(BAL.buildings[q.kind].prod) S.order.push([q.x,q.y]);
+      }
+      save(); renderPanel();
+    }
+  }
+  if(S.phase!=='night') return;
+
+  // 스폰
+  S.spawnT-=dt;
+  if(S.spawnQ.length && S.spawnT<=0){ spawnMob(S.spawnQ.shift()); S.spawnT=.9; }
+
+  const hero=S.hero;
+  // 몬스터
+  for(const m of S.mobs){
+    const st=BAL.mobs[m.kind]; m.flash=Math.max(0,m.flash-dt); m.cd-=dt;
+    const dh=Math.hypot(hero.x-m.x, hero.y-m.y);
+    let tx=CENTER, ty=CENTER, atk=null;
+    if(!hero.dead && dh<1.1){ atk={kind:'hero'}; }
+    else{
+      const dx=tx-m.x, dy=ty-m.y, d=Math.hypot(dx,dy)||1;
+      const nx=m.x+dx/d*st.spd*dt, ny=m.y+dy/d*st.spd*dt;
+      const gx=Math.round(nx), gy=Math.round(ny);
+      const sBlock=structAt(gx,gy);
+      if(sBlock && Math.hypot(nx-gx,ny-gy)<.55) atk={kind:'struct',x:gx,y:gy};
+      else if(d<.8) atk={kind:'fire'};
+      else { m.x=nx; m.y=ny; }
+    }
+    if(atk && m.cd<=0){
+      m.cd=1;
+      if(atk.kind==='hero'){ hero.hp-=st.dmg; hero.flash=.15; }
+      else if(atk.kind==='fire'){ S.fireHp-=st.dmg; }
+      else{ const c=S.grid[atk.x][atk.y]; c.hp-=st.dmg; if(c.hp<=0) S.grid[atk.x][atk.y]=null; }
+    }
+  }
+  // 영웅
+  if(!hero.dead){
+    hero.cd-=dt; hero.flash=Math.max(0,(hero.flash||0)-dt);
+    let tgt=null, best=99;
+    for(const m of S.mobs){ const d=Math.hypot(m.x-hero.x,m.y-hero.y); if(d<best){best=d;tgt=m;} }
+    let dest=null;
+    if(hero.move) dest=hero.move;
+    else if(tgt) dest={x:tgt.x,y:tgt.y};
+    if(hero.move && Math.hypot(hero.move.x-hero.x,hero.move.y-hero.y)<.2) hero.move=null;
+    if(tgt && best<.8){
+      if(hero.cd<=0){ hero.cd=BAL.hero.atkRate; tgt.hp-=BAL.hero.dmg(hero.star); tgt.flash=.15;
+        if(tgt.hp<=0) S.mobs.splice(S.mobs.indexOf(tgt),1); }
+    } else if(dest){
+      const dx=dest.x-hero.x, dy=dest.y-hero.y, d=Math.hypot(dx,dy)||1;
+      hero.x+=dx/d*BAL.hero.spd*dt; hero.y+=dy/d*BAL.hero.spd*dt;
+      hero.x=clamp(hero.x,0,N-1); hero.y=clamp(hero.y,0,N-1);
+    }
+    if(hero.hp<=0){ hero.dead=1; banner('영웅이 쓰러졌다!','새벽에 다시 일어납니다'); }
+  }
+  // 화살탑
+  eachTile((x,y,c)=>{
+    if(c.t!=='tower') return;
+    c.cd=(c.cd||0)-dt; if(c.cd>0) return;
+    let tgt=null,best=BAL.buildings.tower.range;
+    for(const m of S.mobs){ const d=Math.hypot(m.x-x,m.y-y); if(d<best){best=d;tgt=m;} }
+    if(tgt){ c.cd=BAL.buildings.tower.rate; tgt.hp-=BAL.buildings.tower.dmg; tgt.flash=.15;
+      fx.push({t:'arrow',x0:x,y0:y,x1:tgt.x,y1:tgt.y,age:0});
+      if(tgt.hp<=0) S.mobs.splice(S.mobs.indexOf(tgt),1); }
+  });
+  // 종료 판정
+  if(S.fireHp<=0) endNight(false);
+  else if(!S.mobs.length && !S.spawnQ.length) endNight(true);
+}
+
+/* ============================================================
+   렌더링 — 아이소메트릭 픽셀 디오라마 (docs/09 규격)
+   ============================================================ */
+const cv=$('cv'), ctx=cv.getContext('2d');
+const OX=330, OY=96, TW=32, TH=16;   // 타일 반폭/반높이
+const isoX=(x,y)=>OX+(x-y)*TW;
+const isoY=(x,y)=>OY+(x+y)*TH;
+const fx=[];
+let noise=[]; for(let i=0;i<N*N;i++) noise.push(Math.random());
+
+/* 픽셀 스프라이트 */
+const PAL={Y:'#eccf72',y:'#c9a44e',B:'#6b4a2f',b:'#4e321b',w:'#a97e4f',o:'#241407',
+G:'#2e6b34',g:'#4f9c4b',T:'#5a3b22',L:'#5a3b22',F:'#ff8c2e',f:'#ffd457',
+S:'#9a958a',s:'#7a756b',x:'#5d5952',W:'#e8e6df',E:'#7dede2',k:'#e8b48c',h:'#41291a',
+c:'#b0413e',C:'#3e6fb0',A:'#7d8896',a:'#535c6b',R:'#8a5a34',r:'#c99a62',q:'#b8b2a6'};
+function mk(rows){
+  const h=rows.length,w=rows[0].length,c=document.createElement('canvas');
+  c.width=w;c.height=h;const g=c.getContext('2d');
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const ch=rows[j][i];if(ch!=='.'&&PAL[ch]){g.fillStyle=PAL[ch];g.fillRect(i,j,1,1);}}
+  return c;
+}
+const SPR={
+hut:mk(['......YY......','....YYyyYY....','..YYyyyyyyYY..','.YyyyyyyyyyyY.','YyyyyyyyyyyyyY','.bwwwwwwwwwwb.','.bwwbbwoowbwb.','.bwwbbwoowbwb.','.bbbbbwoowbbb.']),
+lumber:mk(['..............','....rRRr......','..rRRRRRRr....','.RRrRRrRRRR...','.bTTTTTTTTb...','..............']),
+quarry:mk(['..............','....qSSq......','..qSSssSSq....','.SSsxxsxSSs...','..sxx.xxs.....']),
+wall:mk(['.SSSSSSSSSS.','SsSSsSSsSSsS','SSsSSxSSsSSS','.sxsxsxsxsx.']),
+tower:mk(['..SSSSSS..','..S.SS.S..','..SSSSSS..','..SssSsS..','..Ss..sS..','..SsSSsS..','..SssSsS..','.SSsxxsSS.','.SxsxxsxS.']),
+fire1:mk(['....ff....','...fFFf...','...FFFF...','..fFFFFf..','..FFffFF..','...FFFF...','.L.fFFf.L.','LLLffffLLL','.LLLLLLLL.']),
+fire2:mk(['....f.....','...ffFf...','..fFFFF...','..FFfFFf..','..fFFfFF..','...FFFF...','.L.fFFf.L.','LLLffffLLL','.LLLLLLLL.']),
+pine:mk(['....G....','...GgG...','..GgGgG..','...GGG...','..GgGgG..','.GgGgGgG.','..GGGGG..','.GgGgGgG.','GgGgGgGgG','....T....','....T....']),
+vill:mk(['.hhh.','.kkk.','ccccc','.ccc.','.b.b.']),
+hero:mk(['..AAA..f','..AkA..f','.CCCCC.f','ACCCCCAf','.CCCCC.A','..b.b...','..b.b...']),
+skel:mk(['.WWW.','.EWE.','..W..','WWWWW','..W..','.W.W.','.W.W.']),
+wolf:mk(['W........','WWW......','.WWWWWWW.','.WWWWWWWW','..W..W...']),
+knight:mk(['..aaa..','..AEA..','.AAAAA.','aAAAAAa','.AAAAA.','..a.a..','..a.a..']),
+rabbit:mk(['.W.W','.WW.','WWWW','.WW.']),
+};
+const rabbits=[{x:1.5,y:6.5,t:0},{x:6.5,y:1.5,t:2}];
+
+function diamond(g,cx,cy,hw,hh){ g.beginPath();g.moveTo(cx,cy-hh);g.lineTo(cx+hw,cy);g.lineTo(cx,cy+hh);g.lineTo(cx-hw,cy);g.closePath(); }
+function drawSpr(img,cx,by,scale){ // cx 중심, by 바닥
+  const s=scale||3, w=img.width*s, h=img.height*s;
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(img,Math.round(cx-w/2),Math.round(by-h),w,h);
+}
+function nightAmount(){
+  if(S.phase==='night') return 1;
+  const t=S.tDay/BAL.dayLength;
+  return t>.88 ? (t-.88)/.12 : 0; // 황혼
+}
+function draw(time){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const na=nightAmount();
+  // 별
+  ctx.fillStyle='rgba(232,230,223,'+(0.5+0.5*na)+')';
+  for(let i=0;i<24;i++){ const sx=(i*211)%660, sy=(i*97)%180; ctx.fillRect(sx,sy,1.5,1.5); }
+
+  // 섬 측면 (디오라마 두께)
+  for(let x=0;x<N;x++)for(let y=0;y<N;y++){
+    if(x===N-1||y===N-1){
+      const cx=isoX(x,y),cy=isoY(x,y)+TH;
+      ctx.fillStyle= y===N-1 ? '#6b4c30' : '#553c24';
+      ctx.beginPath();
+      if(y===N-1){ ctx.moveTo(cx-TW,cy);ctx.lineTo(cx,cy+TH);ctx.lineTo(cx,cy+TH+38);ctx.lineTo(cx-TW,cy+38); }
+      else { ctx.moveTo(cx+TW,cy);ctx.lineTo(cx,cy+TH);ctx.lineTo(cx,cy+TH+38);ctx.lineTo(cx+TW,cy+38); }
+      ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(40,28,14,.5)';
+      ctx.fillRect(cx-(y===N-1?TW:0),cy+26,TW,12);
+    }
+  }
+  // 타일 상판
+  for(let x=0;x<N;x++)for(let y=0;y<N;y++){
+    const cx=isoX(x,y),cy=isoY(x,y)+TH, nz=noise[x*N+y];
+    diamond(ctx,cx,cy,TW,TH);
+    ctx.fillStyle= nz>.5? '#4f9c4b':'#469245'; ctx.fill();
+    ctx.strokeStyle='rgba(30,60,30,.35)'; ctx.stroke();
+    if(nz>.75){ ctx.fillStyle='#5fae57'; ctx.fillRect(cx-8,cy-3,3,2); ctx.fillRect(cx+5,cy+2,3,2);}
+    const c=S.grid[x][y];
+    if(c&&c.t==='farm'){ // 밭: 골든 밀 이랑
+      diamond(ctx,cx,cy,TW-7,TH-4); ctx.fillStyle='#8a6642'; ctx.fill();
+      ctx.fillStyle='#eccf72';
+      for(let r=-1;r<=1;r++){ ctx.save();ctx.translate(cx+r*9,cy+r*4.5);
+        for(let i=-2;i<=2;i++) ctx.fillRect(i*5-1,-2+((i+r)%2),2,4); ctx.restore(); }
+    }
+  }
+  // 선택 하이라이트
+  if(S.sel){ const cx=isoX(S.sel.x,S.sel.y),cy=isoY(S.sel.x,S.sel.y)+TH;
+    diamond(ctx,cx,cy,TW,TH); ctx.strokeStyle='#ffb054'; ctx.lineWidth=2; ctx.stroke(); ctx.lineWidth=1; }
+
+  // 깊이 정렬 드로우 리스트
+  const items=[];
+  eachTile((x,y,c)=>{ if(c.t!=='farm') items.push({d:x+y, draw:()=>drawTileObj(x,y,c,time)}); });
+  if(S.queue&&S.queue.kind!=='fire'&&S.queue.kind!=='chop'){
+    const q=S.queue; items.push({d:q.x+q.y,draw:()=>{
+      const cx=isoX(q.x,q.y),by=isoY(q.x,q.y)+TH+6;
+      ctx.fillStyle='#8a6642'; ctx.fillRect(cx-14,by-16,28,12);
+      ctx.fillStyle='#241407'; ctx.fillRect(cx-14,by-2,28,3);
+      ctx.fillStyle='#ffb054'; ctx.fillRect(cx-14,by-2,28*(1-q.remain/q.total),3);
+    }});
+  }
+  for(const m of S.mobs){ const st=BAL.mobs[m.kind];
+    items.push({d:m.x+m.y,draw:()=>{
+      const cx=isoX(m.x,m.y),by=isoY(m.x,m.y)+TH+4;
+      const img=m.kind==='wolf'?SPR.wolf:m.kind==='knight'?SPR.knight:SPR.skel;
+      if(m.flash>0){ctx.globalAlpha=.55;} drawSpr(img,cx,by,3); ctx.globalAlpha=1;
+      if(m.hp<st.hp){ ctx.fillStyle='#1a1209';ctx.fillRect(cx-9,by-img.height*3-6,18,3);
+        ctx.fillStyle='#e5534b';ctx.fillRect(cx-9,by-img.height*3-6,18*m.hp/st.hp,3); }
+    }});
+  }
+  const h=S.hero;
+  if(!h.dead) items.push({d:h.x+h.y,draw:()=>{
+    const cx=isoX(h.x,h.y),by=isoY(h.x,h.y)+TH+4;
+    if(h.flash>0)ctx.globalAlpha=.55; drawSpr(SPR.hero,cx,by,3); ctx.globalAlpha=1;
+    const hm=BAL.hero.hp(h.star);
+    if(h.hp<hm){ ctx.fillStyle='#1a1209';ctx.fillRect(cx-10,by-27,20,3);
+      ctx.fillStyle='#8fd06a';ctx.fillRect(cx-10,by-27,20*Math.max(0,h.hp)/hm,3); }
+  }});
+  if(S.phase==='day'){
+    const {map}=assignWorkers(); // 일하는 주민 묘사
+    let i=0; for(const key in map){ if(!map[key])continue; const [x,y]=key.split(',').map(Number);
+      const bob=Math.sin(time/300+i*2)*1.5;
+      items.push({d:x+y+.01,draw:()=>drawSpr(SPR.vill,isoX(x,y)+14,isoY(x,y)+TH+2+bob,2.5)}); i++;
+    }
+    for(const r of rabbits){ r.t+=0.016; if(Math.floor(r.t*2)%7===0){ r.x=clamp(r.x+(Math.random()-.5)*.06,0.5,7.5); r.y=clamp(r.y+(Math.random()-.5)*.06,0.5,7.5);}
+      items.push({d:r.x+r.y,draw:()=>drawSpr(SPR.rabbit,isoX(r.x,r.y),isoY(r.x,r.y)+TH+2,2)});
+    }
+  }
+  items.sort((a,b)=>a.d-b.d).forEach(it=>it.draw());
+
+  // 화살 이펙트
+  for(let i=fx.length-1;i>=0;i--){ const a=fx[i]; a.age+=.06; if(a.age>=1){fx.splice(i,1);continue;}
+    const x=isoX(a.x0,a.y0)+(isoX(a.x1,a.y1)-isoX(a.x0,a.y0))*a.age;
+    const y=isoY(a.x0,a.y0)-20+(isoY(a.x1,a.y1)-isoY(a.x0,a.y0)+16)*a.age;
+    ctx.fillStyle='#eccf72'; ctx.fillRect(x,y,4,2);
+  }
+  // 밤 오버레이 + 발광 (docs/09: 주황 대 청록)
+  if(na>0){
+    ctx.fillStyle='rgba(8,14,42,'+(.55*na)+')';
+    ctx.fillRect(0,0,cv.width,cv.height);
+    const glow=(gx,gy,r,col)=>{ const cx=isoX(gx,gy),cy=isoY(gx,gy)+TH-8;
+      const g=ctx.createRadialGradient(cx,cy,2,cx,cy,r);
+      g.addColorStop(0,col); g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.globalCompositeOperation='lighter'; ctx.fillStyle=g;
+      ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill(); ctx.globalCompositeOperation='source-over'; };
+    glow(CENTER,CENTER,60*(0.9+0.1*Math.sin(time/120)),'rgba(255,140,46,'+(.5*na)+')');
+    eachTile((x,y,c)=>{ if(c.t==='hut') glow(x,y,22,'rgba(255,176,84,'+(.35*na)+')'); });
+  }
+}
+function drawTileObj(x,y,c,time){
+  const cx=isoX(x,y), by=isoY(x,y)+TH+6;
+  if(c.t==='bonfire'){
+    const img=(Math.floor(time/160)%2)?SPR.fire1:SPR.fire2;
+    drawSpr(img,cx,by,3+S.fireLv*.35);
+    ctx.fillStyle='#e8d9b0';ctx.font='9px system-ui';ctx.textAlign='center';
+    ctx.fillText('Lv'+S.fireLv,cx,by+10);
+  }
+  else if(c.t==='tree') drawSpr(SPR.pine,cx,by,3);
+  else if(SPR[c.t]) drawSpr(SPR[c.t],cx,by,3);
+  if((c.t==='wall'||c.t==='tower')&&c.hp<BAL.buildings[c.t].hp){
+    ctx.fillStyle='#1a1209';ctx.fillRect(cx-10,by+4,20,3);
+    ctx.fillStyle='#e5534b';ctx.fillRect(cx-10,by+4,20*c.hp/BAL.buildings[c.t].hp,3);
+  }
+}
+
+/* ---------- 입력 ---------- */
+function pick(px,py){
+  const r=cv.getBoundingClientRect();
+  const sx=(px-r.left)*cv.width/r.width, sy=(py-r.top)*cv.height/r.height;
+  const mx=(sx-OX)/TW, my=(sy-OY-TH)/TH;
+  const gx=Math.round((my+mx)/2), gy=Math.round((my-mx)/2);
+  if(gx<0||gy<0||gx>=N||gy>=N) return null;
+  return {x:gx,y:gy};
+}
+cv.addEventListener('pointerdown',e=>{
+  const p=pick(e.clientX,e.clientY); if(!p) return;
+  if(S.phase==='night'){ if(!S.hero.dead){ S.hero.move={x:p.x,y:p.y}; } return; }
+  S.sel=p; renderPanel();
+});
+
+/* ---------- UI ---------- */
+let bannerT=null;
+function banner(t,sub){
+  const b=$('banner'); b.innerHTML=t+(sub?'<small>'+sub+'</small>':'');
+  b.style.opacity=1; clearTimeout(bannerT);
+  bannerT=setTimeout(()=>b.style.opacity=0, 2600);
+}
+function renderTop(){
+  const r=prodRates();
+  $('rFood').textContent=fmt(S.res.food); $('rWood').textContent=fmt(S.res.wood);
+  $('rStone').textContent=fmt(S.res.stone); $('rEss').textContent=fmt(S.res.ess);
+  const {used}=assignWorkers();
+  $('rPop').textContent=used+'/'+popMax();
+  $('fireBar').style.width=clamp(S.fireHp/BAL.bonfire.hp*100,0,100)+'%';
+  $('phaseLabel').textContent= S.phase==='night'?'🌙 밤':'☀️ 낮 '+S.day;
+  $('dayBar').firstElementChild.style.width=(S.phase==='night'?100:S.tDay/BAL.dayLength*100)+'%';
+  $('goal').innerHTML=goalText();
+}
+function defaultPanel(){
+  const q=S.queue;
+  let qs='';
+  if(q){ const nm=q.kind==='fire'?'화톳불 강화':q.kind==='chop'?'벌채':BAL.buildings[q.kind].name;
+    qs='<div class="hint">🔨 '+nm+' 진행 중… '+Math.ceil(q.remain)+'초 <span class="tag">(대기열 1칸 — 확장은 IAP 편의 상품 포인트)</span></div>'; }
+  return '<div class="row">'
+    +'<button id="bHero">🗡 영웅 ★'+S.hero.star+'</button>'
+    +'<button id="bSpeed">⏩ x'+S.speed+'</button>'
+    +'<button id="bReset">↺ 초기화</button>'
+    +'</div>'+qs
+    +'<div class="hint">빈 타일 = 건설 · 화톳불 = 강화 · 나무 = 벌채 · 밤에는 탭한 곳으로 영웅이 이동합니다.</div>';
+}
+function buildPanel(p){
+  const cards=Object.keys(BAL.buildings).map(k=>{
+    const B=BAL.buildings[k], lock=S.fireLv<B.unlock, ok=!lock&&canPay(B.cost)&&!S.queue;
+    return '<div class="card'+(ok?'':' no')+'" data-b="'+k+'"><h4>'+B.icon+' '+B.name+'</h4>'
+      +'<div class="cost">'+(lock?'🔒 화톳불 Lv'+B.unlock:costStr(B.cost)+' · '+B.time+'초')+'</div>'
+      +'<div>'+B.desc+'</div></div>';
+  }).join('');
+  return '<h3>건설 — ('+p.x+','+p.y+')'+(S.queue?' <span class="tag">대기열 사용 중</span>':'')+'</h3>'
+    +'<div class="row">'+cards+'</div>'
+    +'<div class="row" style="margin-top:8px"><button id="bCancel">닫기</button></div>';
+}
+function renderPanel(){
+  const el=$('panel'); const p=S.sel;
+  if(!p||S.phase!=='day'){ el.innerHTML=defaultPanel(); bindDefault(); return; }
+  const c=S.grid[p.x][p.y];
+  if(!c){ el.innerHTML=buildPanel(p); bindBuild(p); return; }
+  if(c.t==='bonfire'){
+    const up=BAL.bonfire.up[S.fireLv];
+    let body;
+    if(!up) body='<div class="hint">최대 레벨입니다. 이 밤을 지켜내면 프로토타입 클리어!</div>';
+    else body='<div class="hint">비용 '+costStr(up.cost)+' · '+up.time+'초 · <span class="tag">웨이브 예산 '
+      +BAL.waveBudget(S.fireLv)+' → '+BAL.waveBudget(S.fireLv+1)+' (docs/06 §6.4)</span></div>'
+      +'<div class="row" style="margin-top:6px"><button class="accent" id="bFire" '+((canPay(up.cost)&&!S.queue)?'':'disabled')+'>강화한다</button><button id="bCancel">닫기</button></div>';
+    el.innerHTML='<h3>🔥 화톳불 Lv'+S.fireLv+'</h3>'+body; bindCommon();
+    const bf=$('bFire'); if(bf) bf.onclick=()=>{ const u=BAL.bonfire.up[S.fireLv]; pay(u.cost);
+      S.queue={kind:'fire',remain:u.time,total:u.time,x:p.x,y:p.y}; S.sel=null; renderPanel(); };
+    return;
+  }
+  if(c.t==='tree'){
+    el.innerHTML='<h3>🌲 소나무</h3><div class="hint">벌채하면 목재 +20 (6초)</div>'
+      +'<div class="row" style="margin-top:6px"><button class="accent" id="bChop" '+(S.queue?'disabled':'')+'>벌채</button><button id="bCancel">닫기</button></div>';
+    bindCommon();
+    $('bChop').onclick=()=>{ S.queue={kind:'chop',remain:6,total:6,x:p.x,y:p.y}; S.sel=null; renderPanel(); };
+    return;
+  }
+  const B=BAL.buildings[c.t];
+  el.innerHTML='<h3>'+B.icon+' '+B.name+'</h3><div class="hint">'+B.desc
+    +(B.hp?' · 내구도 '+Math.ceil(c.hp)+'/'+B.hp:'')+'</div>'
+    +'<div class="row" style="margin-top:6px"><button id="bCancel">닫기</button></div>';
+  bindCommon();
+}
+function bindCommon(){ const bc=$('bCancel'); if(bc) bc.onclick=()=>{S.sel=null;renderPanel();}; }
+function bindBuild(p){
+  bindCommon();
+  document.querySelectorAll('.card[data-b]').forEach(cd=>{
+    cd.onclick=()=>{
+      const k=cd.dataset.b, B=BAL.buildings[k];
+      if(S.fireLv<B.unlock||!canPay(B.cost)||S.queue) return;
+      pay(B.cost); S.queue={kind:k,remain:B.time,total:B.time,x:p.x,y:p.y};
+      S.sel=null; renderPanel();
+    };
+  });
+}
+function bindDefault(){
+  $('bSpeed').onclick=()=>{ S.speed=S.speed===1?2:1; renderPanel(); };
+  $('bReset').onclick=()=>{ if(confirm('처음부터 다시 시작할까요?')){ try{localStorage.removeItem(SAVE);}catch(e){} S=newState(); renderPanel(); } };
+  $('bHero').onclick=()=>{
+    const h=S.hero, cost=BAL.hero.promote[h.star];
+    const nx= cost!==undefined ? '<div class="hint">승급 ✨'+cost+' → HP '+BAL.hero.hp(h.star)+'→'+BAL.hero.hp(h.star+1)
+      +' · 공격 '+BAL.hero.dmg(h.star)+'→'+BAL.hero.dmg(h.star+1)+' <span class="tag">(정수는 밤 방어로만 획득 — 구매 불가 설계)</span></div>'
+      +'<div class="row" style="margin-top:6px"><button class="accent" id="bProm" '+(S.res.ess>=cost?'':'disabled')+'>승급한다</button><button id="bCancel">닫기</button></div>'
+      : '<div class="hint">최대 승급입니다.</div><div class="row"><button id="bCancel">닫기</button></div>';
+    $('panel').innerHTML='<h3>🗡 영웅 ★'+h.star+'</h3><div class="hint">HP '+Math.ceil(Math.max(0,h.hp))+'/'+BAL.hero.hp(h.star)+' · 공격 '+BAL.hero.dmg(h.star)+'</div>'+nx;
+    bindCommon();
+    const bp=$('bProm'); if(bp) bp.onclick=()=>{ S.res.ess-=BAL.hero.promote[h.star]; h.star++; h.hp=BAL.hero.hp(h.star);
+      banner('영웅 승급 ★'+h.star,'더 강해졌다'); renderPanel(); };
+  };
+}
+
+/* ---------- 루프 ---------- */
+let last=0, started=false;
+function frame(t){
+  requestAnimationFrame(frame);
+  if(!started){ draw(t); return; }
+  const dt=Math.min(.05,(t-last)/1000)*S.speed; last=t;
+  tick(dt); draw(t); renderTop();
+}
+$('btnStart').onclick=()=>{ $('intro').style.display='none'; started=true; last=performance.now();
+  if(!load()) banner('낮 1 — 섬을 가꾸자','밤까지 '+BAL.dayLength+'초'); };
+setInterval(save,5000);
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) save(); });
+
+S=load()||newState();
+renderPanel(); renderTop();
+requestAnimationFrame(frame);
+</script>
