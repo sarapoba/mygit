@@ -1,0 +1,590 @@
+<title>루트(ROOT) 디자인 목업 v0.1</title>
+<style>
+  /* ── 갤러리 페이지 토큰 (뷰어 테마 대응) ─────────────────────── */
+  :root{
+    --pg-bg:#F3F6F2; --pg-card:#FFFFFF; --pg-ink:#1B2A21; --pg-sub:#51625A;
+    --pg-line:#E1E8E1; --pg-accent:#2E7D4A;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --pg-bg:#0C131C; --pg-card:#151F2A; --pg-ink:#E8F0EA; --pg-sub:#9FB0A6;
+           --pg-line:#243140; --pg-accent:#4FB874; }
+  }
+  :root[data-theme="dark"]{ --pg-bg:#0C131C; --pg-card:#151F2A; --pg-ink:#E8F0EA; --pg-sub:#9FB0A6;
+           --pg-line:#243140; --pg-accent:#4FB874; }
+  :root[data-theme="light"]{ --pg-bg:#F3F6F2; --pg-card:#FFFFFF; --pg-ink:#1B2A21; --pg-sub:#51625A;
+           --pg-line:#E1E8E1; --pg-accent:#2E7D4A; }
+
+  *{box-sizing:border-box; margin:0}
+  html,body{background:var(--pg-bg); color:var(--pg-ink);
+    font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px; margin:0 auto; padding:48px 24px 96px}
+
+  header.hero{margin-bottom:40px}
+  .hero .kicker{font-size:12px; letter-spacing:.14em; color:var(--pg-accent); font-weight:700; text-transform:uppercase}
+  .hero h1{font-size:30px; line-height:1.25; font-weight:800; margin:8px 0 10px; text-wrap:balance}
+  .hero p{max-width:62ch; color:var(--pg-sub); font-size:14.5px; line-height:1.65}
+  .hero code{background:var(--pg-card); border:1px solid var(--pg-line); border-radius:6px; padding:1px 6px; font-size:12.5px}
+
+  h2.sec{font-size:19px; font-weight:800; margin:56px 0 6px}
+  p.sec-sub{color:var(--pg-sub); font-size:13.5px; margin-bottom:20px; max-width:70ch; line-height:1.6}
+
+  /* ── 토큰 스와치 ── */
+  .swatches{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px}
+  .sw{border:1px solid var(--pg-line); border-radius:14px; overflow:hidden; background:var(--pg-card)}
+  .sw .chip{height:56px}
+  .sw .meta{padding:8px 10px}
+  .sw .meta b{display:block; font-size:12.5px}
+  .sw .meta span{font-size:11.5px; color:var(--pg-sub); font-variant-numeric:tabular-nums}
+
+  .typerow{display:flex; flex-direction:column; gap:10px; background:var(--pg-card); border:1px solid var(--pg-line); border-radius:16px; padding:20px 22px}
+  .typerow>div{display:flex; align-items:baseline; gap:16px; flex-wrap:wrap}
+  .typerow .lbl{width:120px; font-size:11.5px; color:var(--pg-sub); letter-spacing:.06em}
+
+  /* ── 컴포넌트 데모 ── */
+  .comp-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px}
+  .comp{background:var(--pg-card); border:1px solid var(--pg-line); border-radius:16px; padding:16px}
+  .comp h4{font-size:12px; color:var(--pg-sub); font-weight:700; margin-bottom:12px; letter-spacing:.05em}
+  .comp .row{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+
+  /* ── 폰 프레임 갤러리 ── */
+  .gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:28px}
+  figure.shot{display:flex; flex-direction:column; gap:10px}
+  figcaption{font-size:12.5px; color:var(--pg-sub); line-height:1.55; padding:0 4px}
+  figcaption b{color:var(--pg-ink); font-size:13px}
+
+  .phone{width:100%; max-width:300px; margin:0 auto; aspect-ratio:300/632; border-radius:34px; padding:10px;
+    background:#101614; box-shadow:0 18px 44px rgba(10,25,15,.22)}
+  .scr{position:relative; width:100%; height:100%; border-radius:26px; overflow:hidden;
+    display:flex; flex-direction:column; font-size:12px}
+
+  /* 앱 팔레트 — 라이트(주간의 정원) */
+  .ph-light{ --bg:#F7F9F6; --card:#FFFFFF; --line:#E4EAE4; --ink:#1B2A21; --sub:#51625A; --mut:#8B9A92;
+    --leaf:#3D9A5C; --leaf-d:#2E7D4A; --leaf-050:#F1F7F2; --leaf-100:#DEEEE1; --leaf-300:#8FCB9D;
+    --ice:#4E9CD0; --ice-100:#E3F2FB; --amber:#DE9B3B; --amber-100:#FBF0DC; --plum:#8B6FC7;
+    --g0:#EDF0EC; --g1:#C7E5CC; --g2:#7CC98F; --g3:#3D9A5C;
+    background:var(--bg); color:var(--ink)}
+  /* 앱 팔레트 — 다크(밤의 정원) */
+  .ph-dark{ --bg:#0F1722; --card:#18232F; --line:#243140; --ink:#E8F0EA; --sub:#9FB0A6; --mut:#5F7069;
+    --leaf:#4FB874; --leaf-d:#3D9A5C; --leaf-050:#16241C; --leaf-100:#1E3527; --leaf-300:#35784E;
+    --ice:#6FB6E4; --ice-100:#16283B; --amber:#E4AC58; --amber-100:#2E2617; --plum:#A48BE0;
+    --g0:#1C2833; --g1:#28513A; --g2:#35784E; --g3:#4FB874;
+    background:var(--bg); color:var(--ink)}
+
+  .status{display:flex; justify-content:space-between; padding:9px 18px 4px; font-size:10.5px; color:var(--sub); font-weight:600}
+  .appbar{display:flex; align-items:center; justify-content:space-between; padding:8px 16px 6px}
+  .appbar .date{font-size:15px; font-weight:800}
+  .appbar .date span{display:block; font-size:10px; color:var(--sub); font-weight:500; margin-top:1px}
+  .chips{display:flex; gap:6px}
+  .chip-pill{display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:4px 9px; font-size:11px; font-weight:700; font-variant-numeric:tabular-nums}
+  .chip-streak{background:var(--leaf-050); color:var(--leaf-d)}
+  .chip-freeze{background:var(--ice-100); color:var(--ice)}
+  .chip-dew{background:var(--leaf-050); color:var(--leaf-d)}
+
+  .body-scroll{flex:1; overflow:hidden; padding:4px 14px 8px; display:flex; flex-direction:column; gap:9px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px}
+
+  /* 루티 뷰포트 */
+  .ruti-box{display:flex; align-items:center; gap:12px; background:linear-gradient(160deg,var(--leaf-050),var(--card)); border:1px solid var(--line); border-radius:18px; padding:12px 14px}
+  .ruti-box .talk{flex:1}
+  .ruti-box .talk p{font-size:12.5px; font-weight:600; line-height:1.45}
+  .ruti-box .talk span{font-size:10.5px; color:var(--sub)}
+  .ring{position:relative; width:44px; height:44px; border-radius:50%;
+    background:conic-gradient(var(--leaf) 0 33%, var(--g0) 33% 100%)}
+  .ring::after{content:"1/3"; position:absolute; inset:5px; background:var(--card); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:var(--leaf-d)}
+
+  /* 코치 카드 */
+  .coach{display:flex; gap:9px; align-items:flex-start}
+  .coach .ico{width:26px; height:26px; border-radius:8px; background:var(--leaf-050); display:flex; align-items:center; justify-content:center; flex:none}
+  .coach .txt{flex:1; font-size:11.5px; line-height:1.5; color:var(--ink)}
+  .coach .who{display:flex; align-items:center; gap:5px; margin-bottom:2px}
+  .coach .who b{font-size:11px}
+  .ai-badge{font-size:8.5px; font-weight:800; letter-spacing:.05em; border:1px solid var(--line); color:var(--sub); border-radius:4px; padding:0 4px}
+
+  /* 습관 카드 */
+  .habit{display:flex; align-items:center; gap:11px}
+  .habit .nm{flex:1}
+  .habit .nm b{display:block; font-size:13px; font-weight:700}
+  .habit .nm span{font-size:10.5px; color:var(--sub)}
+  .habit.done{background:var(--leaf-050); border-color:transparent}
+  .habit.done .nm b{color:var(--leaf-d)}
+  .leafcnt{display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700; color:var(--leaf-d); font-variant-numeric:tabular-nums}
+
+  /* 체크 버튼 */
+  .ck{width:40px; height:40px; border-radius:50%; border:2px solid var(--line); background:transparent; flex:none; position:relative}
+  .ck.lg{width:64px; height:64px}
+  .ck.xl{width:88px; height:88px; border-width:3px}
+  .ck.on{background:var(--leaf); border-color:var(--leaf)}
+  .ck.on::after{content:""; position:absolute; inset:0; background:
+    center/46% no-repeat url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.8l4.6 4.6L19.5 7"/></svg>')}
+  .ck.half{background:linear-gradient(135deg,var(--leaf) 0 50%,transparent 50%); border-color:var(--leaf)}
+  .ck.half::after{content:""; position:absolute; inset:0; background:
+    center/46% no-repeat url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%233D9A5C" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.8l4.6 4.6L19.5 7"/></svg>')}
+  .ck.wait{border-style:dashed; border-color:var(--amber)}
+  .ck.lock{opacity:.35}
+
+  /* 퀘스트 스트립/진행바 */
+  .strip{display:flex; align-items:center; gap:9px; font-size:11px; color:var(--sub)}
+  .bar{flex:1; height:6px; border-radius:3px; background:var(--g0); overflow:hidden}
+  .bar i{display:block; height:100%; border-radius:3px; background:var(--leaf); width:60%}
+
+  /* 탭바 */
+  .tabbar{display:flex; border-top:1px solid var(--line); background:var(--card); padding:7px 6px 12px}
+  .tab{flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:8.5px; color:var(--mut); font-weight:600}
+  .tab.on{color:var(--leaf-d)}
+  .tab svg{width:19px; height:19px}
+
+  /* 잔디 */
+  .grass{display:grid; grid-template-columns:repeat(12,1fr); gap:3px}
+  .grass i{aspect-ratio:1; border-radius:3.5px; background:var(--g0); position:relative}
+  .grass i.p{background:var(--g1)} .grass i.d1{background:var(--g2)} .grass i.d2{background:var(--g3)}
+  .grass i.fz{background:var(--g1)}
+  .grass i.fz::after{content:"❄"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:6.5px; color:var(--ice)}
+
+  /* 스탯 타일 */
+  .tiles{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
+  .tile{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 10px 9px}
+  .tile b{font-size:16px; font-weight:800; font-variant-numeric:tabular-nums}
+  .tile b em{font-style:normal; font-size:10px; color:var(--leaf-d)}
+  .tile span{display:block; font-size:9.5px; color:var(--sub); margin-top:2px}
+
+  /* 잠금 카드 */
+  .lockcard{position:relative; overflow:hidden}
+  .lockcard .blurred{filter:blur(4px); opacity:.55; font-size:11px; line-height:1.5}
+  .lockcard .over{position:absolute; inset:0; display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center}
+  .btn-mini{font-size:10.5px; font-weight:700; color:#fff; background:var(--leaf); border-radius:999px; padding:5px 12px}
+
+  /* 버튼 */
+  .btn{display:flex; align-items:center; justify-content:center; height:42px; border-radius:14px; font-size:13px; font-weight:800; background:var(--leaf); color:#fff}
+  .btn.sub{background:transparent; border:1.5px solid var(--line); color:var(--ink); font-weight:700}
+  .btn.grad{background:linear-gradient(90deg,var(--leaf),var(--plum))}
+
+  /* 위험 배너(보호 프레이밍) */
+  .risk{display:flex; gap:8px; align-items:center; background:var(--card); border:1px solid var(--line); border-left:3px solid var(--leaf); border-radius:12px; padding:9px 11px; font-size:11px; line-height:1.45}
+
+  /* 페이월 */
+  .dim{position:absolute; inset:0; background:rgba(12,20,15,.44)}
+  .sheet{position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:22px 22px 0 0; padding:12px 16px 16px; display:flex; flex-direction:column; gap:9px}
+  .sheet .grab{width:34px; height:4px; border-radius:2px; background:var(--line); margin:0 auto}
+  .sheet .x{position:absolute; top:12px; left:14px; font-size:15px; color:var(--sub); line-height:1}
+  .plan{display:flex; align-items:center; justify-content:space-between; border:1.5px solid var(--line); border-radius:13px; padding:9px 12px}
+  .plan.sel{border-color:var(--leaf); background:var(--leaf-050)}
+  .plan b{font-size:12.5px} .plan span{display:block; font-size:10px; color:var(--sub)}
+  .plan .price{font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; text-align:right}
+  .tagoff{font-size:9px; color:var(--leaf-d); font-weight:800; background:var(--leaf-100); border-radius:4px; padding:1px 4px}
+  .benefit{display:flex; gap:7px; font-size:11px; color:var(--ink); align-items:center}
+  .benefit svg{flex:none}
+
+  /* 진단(온보딩 패턴 B) */
+  .dots{display:flex; gap:5px; justify-content:center; padding-top:6px}
+  .dots i{width:6px; height:6px; border-radius:3px; background:var(--g0)}
+  .dots i.on{background:var(--leaf); width:16px}
+  .q-title{font-size:19px; font-weight:800; line-height:1.35; padding:14px 4px 4px; text-wrap:balance}
+  .opt{display:flex; align-items:center; gap:11px; padding:13px 13px}
+  .opt .emo{font-size:19px}
+  .opt b{display:block; font-size:13.5px}
+  .opt span{font-size:11px; color:var(--sub)}
+
+  /* 마일스톤/시나리오 표 등 */
+  .mile{display:flex; align-items:center; gap:8px; font-size:11px; color:var(--sub)}
+  .rowtbl{display:flex; justify-content:space-between; padding:7px 2px; font-size:11px; border-bottom:1px solid var(--line)}
+  .rowtbl:last-child{border-bottom:0}
+  .rowtbl b{font-variant-numeric:tabular-nums}
+
+  .kv{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center}
+  .kv .cell b{display:block; font-size:14px; font-weight:800; font-variant-numeric:tabular-nums}
+  .kv .cell span{font-size:9px; color:var(--sub)}
+
+  .stagebar{display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--sub)}
+
+  footer{margin-top:64px; color:var(--pg-sub); font-size:12px; line-height:1.7; border-top:1px solid var(--pg-line); padding-top:18px}
+
+  @media (prefers-reduced-motion: no-preference){
+    .ruti-svg .leafL{transform-origin:50% 100%; animation:sway 3.6s ease-in-out infinite}
+    .ruti-svg .leafR{transform-origin:50% 100%; animation:sway 3.6s ease-in-out -1.8s infinite}
+    @keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+  }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="kicker">ROOT · Design Mockup v0.1</div>
+    <h1>루트(ROOT) — 디자인 시스템 & 핵심 화면 목업</h1>
+    <p>습관 형성 앱 루트의 시각 언어 실물 확인용 페이지입니다. 토큰·컴포넌트 규격은 <code>habit-app/14-design-system.md</code>,
+    화면별 콘텐츠 정의는 <code>15-screen-designs.md</code>가 원본이며, 이 페이지는 그 문서를 그대로 렌더링한 것입니다.
+    원칙: 빨강은 시스템 에러 전용 · 모티프는 식물로 통일 · 화면당 생기는 1~2곳 · 다크모드는 반전이 아닌 "밤의 정원".</p>
+  </header>
+
+  <h2 class="sec">1. 컬러 토큰</h2>
+  <p class="sec-sub">라이트(주간의 정원) / 다크(밤의 정원 — 짙은 남색 베이스, 잔디는 전용 팔레트). 빨강 <b>#D64545</b>는 습관·스트릭 문맥 사용 금지.</p>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#3D9A5C"></div><div class="meta"><b>leaf-500 · Primary</b><span>#3D9A5C — 체크·CTA·활성 탭</span></div></div>
+    <div class="sw"><div class="chip" style="background:#2E7D4A"></div><div class="meta"><b>leaf-600</b><span>#2E7D4A — 눌림·강조 텍스트</span></div></div>
+    <div class="sw"><div class="chip" style="background:#DEEEE1"></div><div class="meta"><b>leaf-100</b><span>#DEEEE1 — 잔디 부분 달성</span></div></div>
+    <div class="sw"><div class="chip" style="background:#4E9CD0"></div><div class="meta"><b>ice-500 · 프리즈 전용</b><span>#4E9CD0 — 눈송이·보호일</span></div></div>
+    <div class="sw"><div class="chip" style="background:#DE9B3B"></div><div class="meta"><b>amber-500</b><span>#DE9B3B — 마일스톤·시즌 (경고 금지)</span></div></div>
+    <div class="sw"><div class="chip" style="background:#8B6FC7"></div><div class="meta"><b>plum-500</b><span>#8B6FC7 — 프리미엄 시그니처</span></div></div>
+    <div class="sw"><div class="chip" style="background:#D64545"></div><div class="meta"><b>red-500 · 시스템 전용</b><span>#D64545 — 에러·결제 실패만</span></div></div>
+    <div class="sw"><div class="chip" style="background:#F7F9F6; border-bottom:1px solid #E4EAE4"></div><div class="meta"><b>paper (light)</b><span>#F7F9F6 / card #FFFFFF</span></div></div>
+    <div class="sw"><div class="chip" style="background:#0F1722"></div><div class="meta"><b>paper (dark)</b><span>#0F1722 / card #18232F — 밤의 정원</span></div></div>
+    <div class="sw"><div class="chip" style="background:linear-gradient(90deg,#1C2833 0 25%,#28513A 0 50%,#35784E 0 75%,#4FB874 0)"></div><div class="meta"><b>잔디 스케일 (dark)</b><span>반전 아닌 전용 4단</span></div></div>
+  </div>
+
+  <h2 class="sec">2. 타이포그래피</h2>
+  <p class="sec-sub">Pretendard(폴백: 시스템 산세리프) · 숫자는 tabular-nums · 시스템 폰트 200%까지 대응.</p>
+  <div class="typerow">
+    <div><span class="lbl">display 30/700</span><span style="font-size:30px; font-weight:800; font-variant-numeric:tabular-nums">47일째 자라는 중</span></div>
+    <div><span class="lbl">title-1 22/700</span><span style="font-size:22px; font-weight:700">이 흐름을 잃지 않게</span></div>
+    <div><span class="lbl">title-2 18/600</span><span style="font-size:18px; font-weight:600">퇴근 후 리셋</span></div>
+    <div><span class="lbl">body 15/400</span><span style="font-size:15px">처음 목표는 작을수록 이겨요. 늘리는 건 언제든 할 수 있어요.</span></div>
+    <div><span class="lbl">caption 13/400</span><span style="font-size:13px; color:var(--pg-sub)">체험 종료 하루 전에 꼭 알려드려요</span></div>
+  </div>
+
+  <h2 class="sec">3. 코어 컴포넌트</h2>
+  <p class="sec-sub">기능 규격은 11 문서 §5, 비주얼은 14 문서 §7. 아래는 라이트 팔레트 기준 데모.</p>
+  <div class="comp-grid">
+    <div class="comp ph-light" style="border-radius:16px">
+      <h4>CHECKBUTTON — 5 상태</h4>
+      <div class="row">
+        <span class="ck" title="미완료"></span>
+        <span class="ck on" title="완료"></span>
+        <span class="ck half" title="부분(2분 버전)"></span>
+        <span class="ck wait" title="회복 대기"></span>
+        <span class="ck lock" title="잠김"></span>
+      </div>
+      <p style="font-size:10.5px; color:var(--sub); margin-top:10px">미완료 / 완료 / 부분(2분) / 회복대기(amber 점선) / 잠김</p>
+    </div>
+    <div class="comp ph-light" style="border-radius:16px">
+      <h4>STREAKBADGE · FREEZECHIP · DEW</h4>
+      <div class="row">
+        <span class="chip-pill chip-streak"><svg width="11" height="11" viewBox="0 0 24 24" fill="#2E7D4A"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>47</span>
+        <span class="chip-pill chip-freeze">❄ 3</span>
+        <span class="chip-pill chip-dew">💧 128</span>
+        <span class="chip-pill" style="background:var(--card); border:1px solid var(--line); color:var(--sub)">다시 시작</span>
+      </div>
+      <p style="font-size:10.5px; color:var(--sub); margin-top:10px">잎사귀+숫자(불꽃 금지) · 끊김 후엔 숫자 대신 "다시 시작"</p>
+    </div>
+    <div class="comp ph-light" style="border-radius:16px">
+      <h4>COACHCARD — 정원사 + AI 배지 상시</h4>
+      <div class="card coach" style="padding:10px">
+        <div class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2E7D4A" stroke-width="2" stroke-linecap="round"><path d="M12 3v9m0 0c0 4-2 7-5 9m5-9c0 4 2 7 5 9M7 6c1.5 1 3.5 1.5 5 1.5S15.5 7 17 6"/></svg></div>
+        <div class="txt"><div class="who"><b>정원사</b><span class="ai-badge">AI</span></div>
+        어제 3개 모두 달성했어요. 오늘 「홈트 15분」은 19일째 — 21일까지 이틀이에요.</div>
+      </div>
+    </div>
+    <div class="comp ph-light" style="border-radius:16px">
+      <h4>GRASSCALENDAR — 5 상태 셀</h4>
+      <div class="row" style="gap:8px">
+        <span style="width:18px;height:18px;border-radius:4px;background:var(--g0)"></span>
+        <span style="width:18px;height:18px;border-radius:4px;background:var(--g1)"></span>
+        <span style="width:18px;height:18px;border-radius:4px;background:var(--g2)"></span>
+        <span style="width:18px;height:18px;border-radius:4px;background:var(--g3)"></span>
+        <span style="width:18px;height:18px;border-radius:4px;background:var(--g1); position:relative; text-align:center; font-size:9px; color:var(--ice)">❄</span>
+      </div>
+      <p style="font-size:10.5px; color:var(--sub); margin-top:10px">미달성=연회색 빈 칸(빨간 X 금지) / 부분 / 완료 2단 / 프리즈</p>
+    </div>
+  </div>
+
+  <h2 class="sec">4. 핵심 화면 목업 8종</h2>
+  <p class="sec-sub">화면 ID는 11 문서 인벤토리 기준. 각 프레임 아래 캡션에 설계 의도를 병기했습니다.</p>
+
+  <div class="gallery">
+
+    <!-- ① 온보딩 진단 -->
+    <figure class="shot">
+      <div class="phone"><div class="scr ph-light">
+        <div class="status"><span>9:41</span><span>●●●</span></div>
+        <div class="dots"><i class="on"></i><i></i><i></i></div>
+        <div class="body-scroll" style="padding-top:8px">
+          <div class="q-title">지금 가장 키우고 싶은 건<br>무엇인가요?</div>
+          <div class="card opt"><span class="emo">💪</span><div><b>몸</b><span>운동·수면·식습관을 되찾고 싶어요</span></div></div>
+          <div class="card opt"><span class="emo">📚</span><div><b>공부</b><span>시험·자격증·어학을 준비 중이에요</span></div></div>
+          <div class="card opt"><span class="emo">🚀</span><div><b>일과 성장</b><span>커리어와 사이드 프로젝트를 키우고 싶어요</span></div></div>
+          <div class="card opt"><span class="emo">🌿</span><div><b>마음</b><span>마음의 여유와 안정이 필요해요</span></div></div>
+          <div style="margin-top:auto; padding:4px 2px 10px; font-size:11.5px; color:var(--sub)">← 뒤로</div>
+        </div>
+      </div></div>
+      <figcaption><b>ON-00 · 진단 Q1 (패턴 B)</b><br>선택 즉시 전진 — 확인 버튼 없음. 진행 도트 3개, 선택지 카드 72pt.</figcaption>
+    </figure>
+
+    <!-- ② 홈 라이트 -->
+    <figure class="shot">
+      <div class="phone"><div class="scr ph-light">
+        <div class="status"><span>9:41</span><span>●●●</span></div>
+        <div class="appbar">
+          <div class="date">7월 12일 <span>토요일</span></div>
+          <div class="chips">
+            <span class="chip-pill chip-streak"><svg width="10" height="10" viewBox="0 0 24 24" fill="#2E7D4A"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>47</span>
+            <span class="chip-pill chip-freeze">❄ 3</span>
+          </div>
+        </div>
+        <div class="body-scroll">
+          <div class="ruti-box">
+            <svg class="ruti-svg" width="52" height="56" viewBox="0 0 60 66">
+              <path class="leafL" d="M30 30 C18 26 12 16 14 8 C24 10 30 18 30 30Z" fill="#3D9A5C"/>
+              <path class="leafR" d="M30 30 C42 26 48 16 46 8 C36 10 30 18 30 30Z" fill="#5FB377"/>
+              <rect x="28.5" y="26" width="3" height="14" rx="1.5" fill="#2E7D4A"/>
+              <path d="M16 40 h28 l-3.4 20 a4 4 0 0 1-4 3.4 h-13.2 a4 4 0 0 1-4-3.4Z" fill="#C98A5B"/>
+              <rect x="14" y="38" width="32" height="6" rx="3" fill="#B4744A"/>
+              <circle cx="25" cy="51" r="1.8" fill="#5C3A24"/><circle cx="35" cy="51" r="1.8" fill="#5C3A24"/>
+              <path d="M27 56 q3 2.4 6 0" stroke="#5C3A24" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+            </svg>
+            <div class="talk"><p>오늘도 만나서 좋아요!</p><span>어린나무까지 XP 320 남았어요</span></div>
+            <div class="ring"></div>
+          </div>
+          <div class="card coach" style="padding:10px">
+            <div class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2E7D4A" stroke-width="2" stroke-linecap="round"><path d="M12 3v9m0 0c0 4-2 7-5 9m5-9c0 4 2 7 5 9M7 6c1.5 1 3.5 1.5 5 1.5S15.5 7 17 6"/></svg></div>
+            <div class="txt"><div class="who"><b>정원사</b><span class="ai-badge">AI</span></div>
+            오늘의 시작은 「물 한 잔」. 홈트는 19일째, 21일까지 이틀이에요.</div>
+          </div>
+          <div class="card habit done"><span class="ck on"></span><div class="nm"><b>기상 직후 물 한 잔</b><span>완료 · 07:12</span></div><span class="leafcnt"><svg width="10" height="10" viewBox="0 0 24 24" fill="#2E7D4A"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>12</span></div>
+          <div class="card habit"><span class="ck"></span><div class="nm"><b>홈트 15분</b><span>2분 버전: 운동복 갈아입기</span></div><span class="leafcnt"><svg width="10" height="10" viewBox="0 0 24 24" fill="#2E7D4A"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>19</span></div>
+          <div class="card habit"><span class="ck half"></span><div class="nm"><b>영단어 10개</b><span>부분 달성 · 3개 외움</span></div><span class="leafcnt"><svg width="10" height="10" viewBox="0 0 24 24" fill="#2E7D4A"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>5</span></div>
+          <div class="card strip"><span>주간 퀘스트</span><div class="bar"><i></i></div><b style="color:var(--ink); font-variant-numeric:tabular-nums">3/5</b></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C8 7 6 10 6 13a6 6 0 0 0 12 0c0-3-2-6-6-10Zm-1 15v3h2v-3Z"/></svg>홈</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg>기록</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z M4 9h16"/></svg>라이브러리</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10h8l-1.5 9h-5Z M6 10h12"/></svg>루티</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.4-3.6 4-5 7-5s5.6 1.4 7 5"/></svg>마이</div>
+        </div>
+      </div></div>
+      <figcaption><b>HM-01 · 홈, 라이트 (Phase 1)</b><br>완료 카드는 틴트로 가라앉혀 미완료가 뜨게. 손실 어휘 없는 코치 카피.</figcaption>
+    </figure>
+
+    <!-- ③ 홈 다크 · 위험 상태 -->
+    <figure class="shot">
+      <div class="phone"><div class="scr ph-dark">
+        <div class="status"><span>21:24</span><span>●●●</span></div>
+        <div class="appbar">
+          <div class="date">7월 12일 <span>토요일 밤</span></div>
+          <div class="chips">
+            <span class="chip-pill chip-streak"><svg width="10" height="10" viewBox="0 0 24 24" fill="#4FB874"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>47</span>
+            <span class="chip-pill chip-freeze">❄ 3</span>
+          </div>
+        </div>
+        <div class="body-scroll">
+          <div class="risk"><svg width="15" height="15" viewBox="0 0 24 24" fill="#4FB874" style="flex:none"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>
+            <span>오늘 <b>19일째</b>예요. 2분이면 지킬 수 있어요.</span></div>
+          <div class="card habit"><span class="ck"></span><div class="nm"><b>홈트 15분</b><span>2분 버전: 운동복 갈아입기</span></div><span class="leafcnt" style="color:var(--leaf)"><svg width="10" height="10" viewBox="0 0 24 24" fill="#4FB874"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>19</span></div>
+          <div class="card habit done"><span class="ck on"></span><div class="nm"><b>기상 직후 물 한 잔</b><span>완료 · 07:12</span></div><span class="leafcnt" style="color:var(--leaf)"><svg width="10" height="10" viewBox="0 0 24 24" fill="#4FB874"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>12</span></div>
+          <div class="card habit done"><span class="ck half"></span><div class="nm"><b>영단어 10개</b><span>부분 달성 · 오늘은 여기까지도 충분해요</span></div><span class="leafcnt" style="color:var(--leaf)"><svg width="10" height="10" viewBox="0 0 24 24" fill="#4FB874"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>5</span></div>
+          <div class="ruti-box">
+            <svg width="46" height="50" viewBox="0 0 60 66">
+              <path d="M30 30 C18 26 12 16 14 8 C24 10 30 18 30 30Z" fill="#35784E"/>
+              <path d="M30 30 C42 26 48 16 46 8 C36 10 30 18 30 30Z" fill="#4FB874"/>
+              <rect x="28.5" y="26" width="3" height="14" rx="1.5" fill="#2E7D4A"/>
+              <path d="M16 40 h28 l-3.4 20 a4 4 0 0 1-4 3.4 h-13.2 a4 4 0 0 1-4-3.4Z" fill="#8A5F41"/>
+              <rect x="14" y="38" width="32" height="6" rx="3" fill="#75503A"/>
+              <path d="M23.5 51 a1.8 1.8 0 0 0 3.4 0Z" fill="#2B1D12"/><path d="M33.5 51 a1.8 1.8 0 0 0 3.4 0Z" fill="#2B1D12"/>
+            </svg>
+            <div class="talk"><p>궁금해하며 기다리는 중…</p><span>비난 아님 — '궁금' 상태(08 §3)</span></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C8 7 6 10 6 13a6 6 0 0 0 12 0c0-3-2-6-6-10Zm-1 15v3h2v-3Z"/></svg>홈</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg>기록</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z M4 9h16"/></svg>라이브러리</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10h8l-1.5 9h-5Z M6 10h12"/></svg>루티</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.4-3.6 4-5 7-5s5.6 1.4 7 5"/></svg>마이</div>
+        </div>
+      </div></div>
+      <figcaption><b>HM-01·위험 · 다크 "밤의 정원" (21시+)</b><br>위험 배너도 보호 프레이밍("지킬 수 있어요") — 빨강·경고 아이콘 없음. 미완료 카드 최상단 고정.</figcaption>
+    </figure>
+
+    <!-- ④ 체크인 상세 -->
+    <figure class="shot">
+      <div class="phone"><div class="scr ph-light">
+        <div class="status"><span>9:41</span><span>●●●</span></div>
+        <div class="appbar"><div class="date" style="font-size:14px">홈트 15분 <span>매일 · 19일째</span></div><span style="font-size:11px; color:var(--sub)">⚙</span></div>
+        <div class="body-scroll">
+          <div class="card">
+            <div class="mile"><svg width="11" height="11" viewBox="0 0 24 24" fill="#DE9B3B"><path d="M12 2C7 7 4 11 4 15a8 8 0 0 0 16 0c0-4-3-8-8-13Z"/></svg>
+              <span><b style="color:var(--ink)">21일</b>까지 이틀</span>
+              <div class="bar" style="margin-left:6px"><i style="width:90%; background:var(--amber)"></i></div></div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 0 4px">
+            <span class="ck xl"></span>
+            <span style="font-size:11px; color:var(--sub)">탭 한 번으로 오늘을 기록해요</span>
+          </div>
+          <div class="btn sub" style="height:38px; font-size:12px">2분 버전으로 하기 — 운동복 갈아입기</div>
+          <div class="card">
+            <h4 style="font-size:10.5px; color:var(--sub); margin-bottom:8px; letter-spacing:.04em">최근 12주</h4>
+            <div class="grass" data-g="detail"></div>
+          </div>
+          <div class="card" style="font-size:11px; line-height:1.6">
+            <b style="font-size:11.5px">기록</b><br>
+            7/11 완전 달성 · 19:40<br>7/10 <span style="color:var(--ice)">❄ 프리즈가 지켜줬어요</span><br>7/9 부분 달성(2분 버전)
+          </div>
+        </div>
+      </div></div>
+      <figcaption><b>HM-02 · 체크인 상세</b><br>72pt 체크 + 2분 버전 상시 보조 버튼. 프리즈일은 "지켜줬어요" — 결손이 아닌 방어 서술.</figcaption>
+    </figure>
+
+    <!-- ⑤ 기록(잔디) -->
+    <figure class="shot">
+      <div class="phone"><div class="scr ph-light">
+        <div class="status"><span>9:41</span><span>●●●</span></div>
+        <div class="appbar"><div class="date" style="font-size:15px">기록</div>
+          <div class="chips"><span class="chip-pill" style="background:var(--leaf-050); color:var(--leaf-d)">잔디</span><span class="chip-pill" style="background:transparent; color:var(--sub)">캘린더</span></div></div>
+        <div class="body-scroll">
+          <div class="card">
+            <div class="grass" data-g="big" style="grid-template-columns:repeat(14,1fr)"></div>
+            <p style="font-size:9.5px; color:var(--sub); margin-top:8px">미달성일은 빈 칸이에요 — 그날의 달성만 기록해요.</p>
+          </div>
+          <div class="chips" style="padding:0 2px">
+            <span class="chip-pill" style="background:var(--leaf-050); color:var(--leaf-d)">전체</span>
+            <span class="chip-pill" style="background:var(--card); border:1px solid var(--line); color:var(--sub)">물 한 잔</span>
+            <span class="chip-pill" style="background:var(--card); border:1px solid var(--line); color:var(--sub)">홈트</span>
+          </div>
+          <div class="tiles">
+            <div class="tile"><b>86% <em>▲11p</em></b><span>이번 주 달성률</span></div>
+            <div class="tile"><b>47일</b><span>최장 스트릭</span></div>
+            <div class="tile"><b>2회</b><span>프리즈가 지킴</span></div>
+          </div>
+          <div class="card lockcard">
+            <div class="blurred">「홈트 15분」을 한 날은 「타이머 25분」 완료율이 +30%p 높았어요. 운동이 공부의 스위치…</div>
+            <div class="over"><span style="font-size:10.5px; color:var(--sub)">습관 사이의 연결이 보여요</span><span class="btn-mini">프리미엄으로 보기</span></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3C8 7 6 10 6 13a6 6 0 0 0 12 0c0-3-2-6-6-10Z"/></svg>홈</div>
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg>기록</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z M4 9h16"/></svg>라이브러리</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10h8l-1.5 9h-5Z M6 10h12"/></svg>루티</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.4-3.6 4-5 7-5s5.6 1.4 7 5"/></svg>마이</div>
+        </div>
+      </div></div>
+      <figcaption><b>RC-01 · 기록 홈</b><br>스탯 타일 하락에도 빨강 없음. 심화 인사이트는 블러 잠금 카드 → PW-01(ctx=report).</figcaption>
+    </figure>
+
+    <!-- ⑥ 페이월 -->
+    <figure class="shot">
+      <div class="phone"><div class="scr ph-light">
+        <div class="status"><span>9:41</span><span>●●●</span></div>
+        <div class="body-scroll" style="opacity:.5">
+          <div class="ruti-box"><div class="talk"><p>3일 연속 달성!</p></div><div class="ring"></div></div>
+          <div class="card habit done"><span class="ck on"></span><div class="nm"><b>기상 직후 물 한 잔</b><span>3일째</span></div></div>
+        </div>
+        <div class="dim"></div>
+        <div class="sheet">
+          <div class="grab"></div><div class="x">✕</div>
+          <div style="text-align:center; padding-top:2px">
+            <b style="font-size:15.5px">3일을 지켰어요 — 이 흐름을 잃지 않게</b>
+            <p style="font-size:10.5px; color:var(--sub); margin-top:3px">프리즈 월 4개가 당신의 스트릭을 대신 지켜요</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px">
+            <div class="benefit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3D9A5C" stroke-width="3" stroke-linecap="round"><path d="M4.5 12.8l4.6 4.6L19.5 7"/></svg>습관 무제한 + 프리즈 월 4개</div>
+            <div class="benefit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3D9A5C" stroke-width="3" stroke-linecap="round"><path d="M4.5 12.8l4.6 4.6L19.5 7"/></svg>정원사의 매일 브리핑·미루기 개입</div>
+            <div class="benefit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3D9A5C" stroke-width="3" stroke-linecap="round"><path d="M4.5 12.8l4.6 4.6L19.5 7"/></svg>습관 사이의 상관 인사이트 리포트</div>
+          </div>
+          <div class="plan sel"><div><b>연간</b><span>월 3,250원꼴 · 7일 무료 체험</span></div>
+            <div class="price">39,000원<br><span class="tagoff">53% 할인</span></div></div>
+          <div class="plan"><div><b>월간</b><span>부담 없이 시작</span></div><div class="price">6,900원</div></div>
+          <div class="btn grad">7일 무료로 시작</div>
+          <p style="font-size:9px; color:var(--sub); text-align:center">체험 종료 하루 전에 꼭 알려드려요 · 구매 복원 · 약관</p>
+        </div>
+      </div></div>
+      <figcaption><b>PW-01 · 페이월 시트 (ctx=streak3)</b><br>닫기 X 첫 프레임 좌상단 · 연간 기본 선택 · D-1 알림 약속을 시트에 명시. CTA만 leaf→plum 그라데이션.</figcaption>
+    </figure>
+
+    <!-- ⑦ 루티 홈 -->
+    <figure class="shot">
+      <div class="phone"><div class="scr ph-light">
+        <div class="status"><span>9:41</span><span>●●●</span></div>
+        <div style="position:relative; height:46%; background:linear-gradient(180deg,#EAF4EC 0%,#DEEEE1 78%,#C7E5CC 78.5%,#C7E5CC 100%); display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px">
+          <span style="position:absolute; top:12px; right:14px" class="chip-pill chip-dew">💧 128</span>
+          <svg class="ruti-svg" width="120" height="128" viewBox="0 0 60 66">
+            <path class="leafL" d="M30 28 C16 24 9 13 12 4 C23 7 30 15 30 28Z" fill="#3D9A5C"/>
+            <path class="leafR" d="M30 28 C44 24 51 13 48 4 C37 7 30 15 30 28Z" fill="#5FB377"/>
+            <path d="M30 34 C40 31 45 24 44 18 C37 20 31 25 30 34Z" fill="#8FCB9D"/>
+            <rect x="28.4" y="24" width="3.2" height="17" rx="1.6" fill="#2E7D4A"/>
+            <path d="M15 40 h30 l-3.6 21 a4 4 0 0 1-4 3.4 h-14.8 a4 4 0 0 1-4-3.4Z" fill="#C98A5B"/>
+            <rect x="13" y="38" width="34" height="6.4" rx="3.2" fill="#B4744A"/>
+            <circle cx="25" cy="52" r="1.9" fill="#5C3A24"/><circle cx="35" cy="52" r="1.9" fill="#5C3A24"/>
+            <path d="M26.6 57 q3.4 2.8 6.8 0" stroke="#5C3A24" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="body-scroll" style="padding-top:10px">
+          <div class="card">
+            <div class="stagebar"><b style="color:var(--ink); font-size:12.5px">꽃봉오리 · 4단계</b><span style="margin-left:auto">어린나무까지</span></div>
+            <div class="bar" style="margin-top:8px"><i style="width:72%"></i></div>
+            <p style="font-size:9.5px; color:var(--sub); margin-top:6px">Lv 8 · XP 320 남음 — 스트릭이 끊겨도 루티는 물러나지 않아요</p>
+          </div>
+          <div class="kv">
+            <div class="cell card" style="padding:10px 4px"><b>꾸미기</b><span>슬롯 5종</span></div>
+            <div class="cell card" style="padding:10px 4px"><b>상점</b><span>확정 구성 팩</span></div>
+            <div class="cell card" style="padding:10px 4px"><b>앨범</b><span>성장 스냅숏</span></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3C8 7 6 10 6 13a6 6 0 0 0 12 0c0-3-2-6-6-10Z"/></svg>홈</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg>기록</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z M4 9h16"/></svg>라이브러리</div>
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 9h10l-1.7 10.4A2.6 2.6 0 0 1 12.7 22h-1.4a2.6 2.6 0 0 1-2.6-2.6Z M5.5 9h13v-2h-13Z"/></svg>루티</div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.4-3.6 4-5 7-5s5.6 1.4 7 5"/></svg>마이</div>
+        </div>
+      </div></div>
+      <figcaption><b>RT-01 · 루티 홈</b><br>성장 단계는 비가역 래칫 — "물러나지 않아요"를 화면에 명시. 이슬은 무과금 전용 재화.</figcaption>
+    </figure>
+
+    <!-- ⑧ 챌린지 상세 -->
+    <figure class="shot">
+      <div class="phone"><div class="scr ph-light">
+        <div class="status"><span>9:41</span><span>●●●</span></div>
+        <div class="appbar"><div class="date" style="font-size:14px">아침 6시 기상 <span>공식 챌린지 · 7/21(월) 시작</span></div></div>
+        <div class="body-scroll">
+          <div class="kv card" style="padding:12px 6px">
+            <div class="cell"><b>30,000원</b><span>보증금</span></div>
+            <div class="cell"><b>2주 · 주 5회</b><span>05:30~07:00 인증</span></div>
+            <div class="cell"><b>87명</b><span>참가 중</span></div>
+          </div>
+          <div class="card">
+            <b style="font-size:12px">예상 환급 시나리오</b>
+            <div class="rowtbl" style="margin-top:6px"><span>100% 달성</span><b style="color:var(--leaf-d)">전액 환급 + 상금</b></div>
+            <div class="rowtbl"><span>85% 이상</span><b>전액 환급</b></div>
+            <div class="rowtbl"><span>85% 미만</span><b>달성률만큼 환급</b></div>
+            <p style="font-size:9.5px; color:var(--sub); margin-top:6px">운영비 1,500원 <s style="color:var(--mut)">3,000원</s> — 플러스 구독 50% 할인 적용가</p>
+          </div>
+          <div class="card coach" style="padding:10px">
+            <div class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2E7D4A" stroke-width="2" stroke-linecap="round"><path d="M12 3v9m0 0c0 4-2 7-5 9m5-9c0 4 2 7 5 9M7 6c1.5 1 3.5 1.5 5 1.5S15.5 7 17 6"/></svg></div>
+            <div class="txt"><div class="who"><b>정원사</b><span class="ai-badge">AI</span></div>
+            돈을 걸면 제가 붙어요 — 위험해 보이는 날엔 아침에 먼저 알려드릴게요.</div>
+          </div>
+          <div class="card" style="font-size:10.5px; color:var(--sub); line-height:1.55">
+            최근 4주 「기상」 달성률 78% — <b style="color:var(--ink)">해볼 만한 난이도</b>예요.<br>첫 참가는 1만원부터 시작할 수도 있어요.
+          </div>
+          <div class="btn" style="margin-top:auto">보증금 걸고 참가</div>
+        </div>
+      </div></div>
+      <figcaption><b>CH-02 · 챌린지 상세 (참가 전)</b><br>환급 시나리오를 결제 전에 전부 공개 · 본인 데이터 기반 난이도 안내 · "탈락까지 N회" 금지.</figcaption>
+    </figure>
+
+  </div>
+
+  <footer>
+    루트(ROOT) 디자인 목업 v0.1 — 기획 문서 세트(habit-app/01~15)와 함께 읽는 실물 참고용입니다.
+    서체는 뷰어 환경의 Pretendard/시스템 폰트로 렌더링되며, 실제 앱 빌드에서는 Pretendard Variable을 번들합니다.
+    루티 캐릭터·아이콘은 방향성 시안으로 프로덕션 에셋은 08 문서·14 문서 §9 기준으로 별도 제작합니다.
+  </footer>
+</div>
+
+<script>
+  // 잔디 패턴 생성(결정적) — 0 빈칸 · 1 부분 · 2 완료1 · 3 완료2 · 4 프리즈
+  function fillGrass(el, cols, rows, seed){
+    var states = ["", "p", "d1", "d2", "fz"];
+    var s = seed;
+    for (var i = 0; i < cols * rows; i++){
+      s = (s * 1103515245 + 12345) % 2147483648;
+      var r = s / 2147483648;
+      var cls = r < .16 ? 0 : r < .3 ? 1 : r < .58 ? 2 : r < .94 ? 3 : 4;
+      var cell = document.createElement("i");
+      if (states[cls]) cell.className = states[cls];
+      el.appendChild(cell);
+    }
+  }
+  document.querySelectorAll('[data-g="detail"]').forEach(function(el){ fillGrass(el, 12, 5, 7); });
+  document.querySelectorAll('[data-g="big"]').forEach(function(el){ fillGrass(el, 14, 6, 42); });
+</script>
