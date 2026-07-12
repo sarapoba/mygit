@@ -43,11 +43,40 @@ class _SproutMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(color: c.leaf050, shape: BoxShape.circle),
-      child: Icon(Icons.eco_rounded, size: 44, color: c.leaf),
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      width: 148,
+      height: 148,
+      child: Stack(alignment: Alignment.center, children: [
+        Container(
+          width: 148,
+          height: 148,
+          decoration: BoxDecoration(color: c.leaf050, shape: BoxShape.circle),
+        ),
+        Container(
+          width: 116,
+          height: 116,
+          decoration: BoxDecoration(color: c.leaf100, shape: BoxShape.circle),
+        ),
+        Container(
+          width: 84,
+          height: 84,
+          decoration: BoxDecoration(
+            color: c.card,
+            shape: BoxShape.circle,
+            boxShadow: dark
+                ? null
+                : [
+                    BoxShadow(
+                      color: c.ink.withOpacity(0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 5),
+                    )
+                  ],
+          ),
+          child: Icon(Icons.eco_rounded, size: 38, color: c.leaf),
+        ),
+      ]),
     );
   }
 }
@@ -113,27 +142,46 @@ class _Question extends StatelessWidget {
       const SizedBox(height: 18),
       ...options.map((o) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: InkWell(
-              onTap: () => controller.obAnswer(key, o.$2, next),
+            child: Material(
+              color: c.card,
               borderRadius: BorderRadius.circular(AppDims.cardRadius),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-                decoration: BoxDecoration(
-                  color: c.card,
-                  borderRadius: BorderRadius.circular(AppDims.cardRadius),
-                  border: Border.all(color: c.line),
-                ),
-                child: Row(children: [
-                  Text(o.$1, style: const TextStyle(fontSize: 21)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(o.$2, style: t.labelLarge),
-                      Text(o.$3, style: t.labelSmall),
-                    ]),
+              elevation: Theme.of(context).brightness == Brightness.dark ? 0 : 1,
+              shadowColor: c.ink.withOpacity(0.5),
+              child: InkWell(
+                onTap: () => controller.obAnswer(key, o.$2, next),
+                borderRadius: BorderRadius.circular(AppDims.cardRadius),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppDims.cardRadius),
+                    border: Theme.of(context).brightness == Brightness.dark
+                        ? Border.all(color: c.line)
+                        : null,
                   ),
-                ]),
+                  child: Row(children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                          color: c.leaf050,
+                          borderRadius: BorderRadius.circular(12)),
+                      alignment: Alignment.center,
+                      child: Text(o.$1, style: const TextStyle(fontSize: 19)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(o.$2, style: t.labelLarge),
+                            const SizedBox(height: 1),
+                            Text(o.$3, style: t.labelSmall),
+                          ]),
+                    ),
+                    Icon(Icons.chevron_right_rounded, size: 18, color: c.mut),
+                  ]),
+                ),
               ),
             ),
           )),

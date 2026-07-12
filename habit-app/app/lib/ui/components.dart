@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../core/tokens.dart';
@@ -5,8 +7,8 @@ import '../domain/clock.dart';
 import '../domain/engine.dart';
 import '../domain/models.dart';
 
-/// 체크 버튼 — 11 §5 규격: 미완료/완료/부분/회복대기 4상태 (P0).
-class CheckButton extends StatelessWidget {
+/// 체크 버튼 — 11 §5 규격 + 탭 스프링·상태 전환 애니메이션 (14 §6).
+class CheckButton extends StatefulWidget {
   const CheckButton({
     super.key,
     required this.size,
@@ -23,49 +25,153 @@ class CheckButton extends StatelessWidget {
   final String? semanticLabel;
 
   @override
+  State<CheckButton> createState() => _CheckButtonState();
+}
+
+class _CheckButtonState extends State<CheckButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final done = grade == Grade.full;
-    final partial = grade == Grade.partial;
+    final done = widget.grade == Grade.full;
+    final partial = widget.grade == Grade.partial;
+    final ring = done || partial
+        ? c.leaf
+        : widget.pendingRecovery
+            ? c.amber
+            : c.line;
 
     return Semantics(
       button: true,
-      label: semanticLabel,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: partial ? null : (done ? c.leaf : Colors.transparent),
-            gradient: partial
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    stops: const [0.5, 0.5],
-                    colors: [c.leaf, Colors.transparent],
-                  )
-                : null,
-            border: Border.all(
-              color: done || partial
-                  ? c.leaf
-                  : pendingRecovery
-                      ? c.amber
-                      : c.line,
-              width: size >= AppDims.checkDetail ? 3 : 2.5,
+      label: widget.semanticLabel,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? 0.88 : 1,
+          duration: const Duration(milliseconds: 110),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutBack,
+            width: widget.size,
+            height: widget.size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: partial ? null : (done ? c.leaf : c.card),
+              gradient: partial
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      stops: const [0.5, 0.5],
+                      colors: [c.leaf, c.card],
+                    )
+                  : null,
+              border: Border.all(
+                  color: ring, width: widget.size >= AppDims.checkDetail ? 3 : 2.4),
+              boxShadow: done
+                  ? [
+                      BoxShadow(
+                        color: c.leaf.withOpacity(0.35),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  : null,
             ),
+            child: done || partial
+                ? Icon(Icons.check_rounded,
+                    size: widget.size * 0.46,
+                    color: done ? Colors.white : c.leafDeep)
+                : null,
           ),
-          child: done || partial
-              ? Icon(Icons.check_rounded,
-                  size: size * 0.46, color: done ? Colors.white : c.leafDeep)
-              : null,
         ),
       ),
     );
   }
+}
+
+/// 진행 링 — 홈 히어로·상세 마일스톤용 (14 §7 StatTile 계열).
+class ProgressRing extends StatelessWidget {
+  const ProgressRing({
+    super.key,
+    required this.size,
+    required this.progress,
+    required this.child,
+    this.stroke = 5,
+    this.color,
+    this.track,
+  });
+
+  final double size;
+  final double progress; // 0.0 ~ 1.0
+  final double stroke;
+  final Color? color;
+  final Color? track;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: progress.clamp(0.0, 1.0)),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, _) => CustomPaint(
+        painter: _RingPainter(
+          progress: value,
+          stroke: stroke,
+          color: color ?? c.leaf,
+          track: track ?? c.grass0,
+        ),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter({
+    required this.progress,
+    required this.stroke,
+    required this.color,
+    required this.track,
+  });
+
+  final double progress;
+  final double stroke;
+  final Color color;
+  final Color track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final inset = rect.deflate(stroke / 2);
+    final trackPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..color = track;
+    final arcPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+    canvas.drawArc(inset, 0, math.pi * 2, false, trackPaint);
+    if (progress > 0) {
+      canvas.drawArc(inset, -math.pi / 2, math.pi * 2 * progress, false, arcPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.progress != progress || old.color != color;
 }
 
 /// 스트릭 배지 — 잎사귀 + tabular 숫자. 끊김 시 "다시 시작" (11 §7-4).
@@ -80,7 +186,8 @@ class StreakBadge extends StatelessWidget {
     final c = context.colors;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: 5),
-      decoration: BoxDecoration(color: c.leaf050, borderRadius: BorderRadius.circular(999)),
+      decoration:
+          BoxDecoration(color: c.leaf050, borderRadius: BorderRadius.circular(999)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.eco_rounded, size: compact ? 12 : 14, color: c.leafDeep),
         const SizedBox(width: 3),
@@ -113,7 +220,8 @@ class FreezeChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(999),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(color: c.ice100, borderRadius: BorderRadius.circular(999)),
+        decoration:
+            BoxDecoration(color: c.ice100, borderRadius: BorderRadius.circular(999)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.ac_unit_rounded, size: 13, color: c.ice),
           const SizedBox(width: 3),
@@ -130,26 +238,72 @@ class FreezeChip extends StatelessWidget {
   }
 }
 
-/// 카드 컨테이너 (14 §4).
+/// 카드 — 라이트: 소프트 섀도, 다크: 헤어라인 (14 §4).
 class AppCard extends StatelessWidget {
-  const AppCard({super.key, required this.child, this.tinted = false, this.padding});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.tinted = false,
+    this.padding,
+    this.radius = AppDims.cardRadius,
+    this.gradient,
+  });
 
   final Widget child;
   final bool tinted;
   final EdgeInsets? padding;
+  final double radius;
+  final Gradient? gradient;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
-      padding: padding ?? const EdgeInsets.all(14),
+      padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: tinted ? c.leaf050 : c.card,
-        borderRadius: BorderRadius.circular(AppDims.cardRadius),
-        border: tinted ? null : Border.all(color: c.line),
+        color: gradient != null ? null : (tinted ? c.leaf050 : c.card),
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(radius),
+        border: dark ? Border.all(color: c.line) : null,
+        boxShadow: dark || tinted
+            ? null
+            : [
+                BoxShadow(
+                  color: c.ink.withOpacity(0.05),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
       ),
       child: child,
+    );
+  }
+}
+
+/// 섹션 라벨 — 화면 리듬 통일 (15 §0).
+class SectionLabel extends StatelessWidget {
+  const SectionLabel(this.text, {super.key, this.trailing});
+
+  final String text;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
+      child: Row(children: [
+        Text(text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: c.sub,
+            )),
+        if (trailing != null) ...[const Spacer(), trailing!],
+      ]),
     );
   }
 }
@@ -177,7 +331,7 @@ class GrassCalendar extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: columns, mainAxisSpacing: 4, crossAxisSpacing: 4),
+          crossAxisCount: columns, mainAxisSpacing: 4.5, crossAxisSpacing: 4.5),
       itemCount: days,
       itemBuilder: (context, i) {
         final d = AppClock.addDays(start, i);
@@ -195,7 +349,7 @@ class GrassCalendar extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(4.5),
               border: isToday ? Border.all(color: c.leaf, width: 2) : null,
             ),
             child: lv == GrassLevel.frozen
@@ -226,7 +380,7 @@ Future<T?> showAppSheet<T>(BuildContext context, Widget child) {
         left: 20,
         right: 20,
         top: 14,
-        bottom: 22 + MediaQuery.of(context).viewInsets.bottom,
+        bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
@@ -235,7 +389,7 @@ Future<T?> showAppSheet<T>(BuildContext context, Widget child) {
           decoration: BoxDecoration(
               color: context.colors.line, borderRadius: BorderRadius.circular(2)),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         child,
       ]),
     ),

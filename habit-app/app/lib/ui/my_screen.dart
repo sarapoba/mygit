@@ -23,39 +23,44 @@ class MyScreen extends StatelessWidget {
       appBar: AppBar(title: const Text(Str.myTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
-            AppDims.screenPad, 4, AppDims.screenPad, 96),
+            AppDims.screenPad, 0, AppDims.screenPad, 100),
         children: [
-          _section(context, Str.forgiveness),
+          const SectionLabel(Str.forgiveness),
           AppCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Column(children: [
               _row(
                 context,
                 icon: Icons.ac_unit_rounded,
+                iconBg: c.ice100,
                 iconColor: c.ice,
                 label: Str.freezeRow,
                 value: Str.freezeStatus(s.freezeBal, freezeCap),
               ),
-              Divider(height: 18, color: c.line),
+              Divider(color: c.line),
               _row(
                 context,
-                icon: Icons.eco_rounded,
-                iconColor: c.leaf,
+                icon: Icons.auto_awesome_rounded,
+                iconBg: c.amber100,
+                iconColor: c.amber,
                 label: Str.recoveryRow,
                 value: recLeft ? Str.recoveryLeft : Str.recoveryUsed,
               ),
             ]),
           ),
-          _section(context, Str.notifSection),
+          const SectionLabel(Str.notifSection),
           AppCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: _row(
               context,
               icon: Icons.notifications_none_rounded,
-              iconColor: c.sub,
+              iconBg: c.leaf050,
+              iconColor: c.leafDeep,
               label: Str.reminderRow,
               value: s.ob.remind ?? Str.reminderNone,
             ),
           ),
-          _section(context, Str.themeSection),
+          const SectionLabel(Str.themeSection),
           AppCard(
             padding: const EdgeInsets.all(6),
             child: Row(
@@ -66,7 +71,7 @@ class MyScreen extends StatelessWidget {
               ],
             ),
           ),
-          _section(context, Str.dataSection),
+          const SectionLabel(Str.dataSection),
           AppCard(
             padding: EdgeInsets.zero,
             child: TextButton(
@@ -90,34 +95,37 @@ class MyScreen extends StatelessWidget {
               child: const Text(Str.resetRow),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
+          Icon(Icons.eco_rounded, size: 18, color: c.mut),
+          const SizedBox(height: 6),
           Text(Str.versionLabel, style: t.labelSmall, textAlign: TextAlign.center),
         ],
       ),
     );
   }
 
-  Widget _section(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 16, 2, 8),
-      child: Text(title,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-    );
-  }
-
   Widget _row(BuildContext context,
       {required IconData icon,
+      required Color iconBg,
       required Color iconColor,
       required String label,
       required String value}) {
     final t = Theme.of(context).textTheme;
-    return Row(children: [
-      Icon(icon, size: 18, color: iconColor),
-      const SizedBox(width: 10),
-      Expanded(child: Text(label, style: t.bodyMedium)),
-      Text(value, style: t.labelSmall),
-    ]);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration:
+              BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, size: 17, color: iconColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Text(label, style: t.bodyMedium)),
+        Text(value, style: t.labelSmall),
+      ]),
+    );
   }
 
   Widget _themeButton(BuildContext context, String mode, String label) {
@@ -127,8 +135,9 @@ class MyScreen extends StatelessWidget {
       child: InkWell(
         onTap: () => controller.setTheme(mode),
         borderRadius: BorderRadius.circular(999),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: on ? c.leaf050 : Colors.transparent,
             borderRadius: BorderRadius.circular(999),

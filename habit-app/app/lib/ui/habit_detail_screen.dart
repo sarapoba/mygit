@@ -9,7 +9,7 @@ import '../state/app_controller.dart';
 import 'components.dart';
 import 'home_screen.dart';
 
-/// HM-02 체크인 상세 — 11 §3.2. 마일스톤 진행·대형 체크·습관별 잔디·설정.
+/// HM-02 체크인 상세 — 11 §3.2. 마일스톤 링 히어로·습관별 잔디·기록·설정.
 class HabitDetailScreen extends StatelessWidget {
   const HabitDetailScreen({super.key, required this.controller, required this.habitId});
 
@@ -55,7 +55,7 @@ class _DetailBody extends StatelessWidget {
         title: Text(habit.name),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.tune_rounded),
             onPressed: () => _showSettings(context),
             tooltip: '습관 설정',
           ),
@@ -63,63 +63,67 @@ class _DetailBody extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
-            AppDims.screenPad, 4, AppDims.screenPad, 40),
+            AppDims.screenPad, 0, AppDims.screenPad, 44),
         children: [
-          // 마일스톤 진행 — 긍정 프레임 "N일까지 M일" (09 §1.1)
-          AppCard(
-            child: Row(children: [
-              Icon(Icons.eco_rounded, size: 14, color: c.amber),
-              const SizedBox(width: 8),
-              Text.rich(TextSpan(style: t.bodySmall, children: [
-                TextSpan(
-                    text: '$next일',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: c.ink)),
-                TextSpan(text: streak >= 66 ? ' — 뿌리내린 습관이에요' : '까지 $remain일'),
-              ])),
-              const Spacer(),
-              StreakBadge(days: streak, compact: true),
-            ]),
-          ),
-          const SizedBox(height: 20),
-          Center(
+          // ── 히어로: 마일스톤 링 속의 체크 버튼 ──
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18),
             child: Column(children: [
-              CheckButton(
-                size: AppDims.checkDetail,
-                grade: grade,
-                pendingRecovery: e.pendingFor(habit),
-                semanticLabel: '${habit.name} 체크',
-                onTap: () => handleCheck(context, controller, habit, full: true),
+              ProgressRing(
+                size: 156,
+                stroke: 7,
+                progress: streak >= 66 ? 1 : streak / next,
+                color: c.leaf,
+                child: CheckButton(
+                  size: AppDims.checkDetail,
+                  grade: grade,
+                  pendingRecovery: e.pendingFor(habit),
+                  semanticLabel: '${habit.name} 체크',
+                  onTap: () => handleCheck(context, controller, habit, full: true),
+                ),
               ),
-              const SizedBox(height: 10),
-              Text('탭 한 번으로 오늘을 기록해요', style: t.labelSmall),
+              const SizedBox(height: 14),
+              StreakBadge(days: streak),
+              const SizedBox(height: 8),
+              Text.rich(
+                TextSpan(style: t.bodySmall, children: [
+                  if (streak >= 66)
+                    const TextSpan(text: '뿌리내린 습관이에요')
+                  else ...[
+                    TextSpan(
+                        text: '$next일',
+                        style:
+                            TextStyle(fontWeight: FontWeight.w700, color: c.ink)),
+                    TextSpan(text: '까지 $remain일 — 탭 한 번이면 돼요'),
+                  ],
+                ]),
+                textAlign: TextAlign.center,
+              ),
             ]),
           ),
-          const SizedBox(height: 14),
           if (grade == null)
-            OutlinedButton(
+            OutlinedButton.icon(
+              icon: Icon(Icons.bolt_rounded, size: 17, color: c.leafDeep),
               onPressed: () => handleCheck(context, controller, habit, full: false),
-              child: Text('2분 버전으로 하기 — ${habit.mini}'),
+              label: Text('2분 버전으로 하기 — ${habit.mini}'),
             ),
-          const SizedBox(height: 16),
+
+          const SectionLabel('최근 12주'),
           AppCard(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('최근 12주', style: t.labelSmall?.copyWith(letterSpacing: 0.5)),
-              const SizedBox(height: 10),
-              GrassCalendar(
-                days: 84,
-                columns: 14,
-                endDate: today,
-                levelOf: (d) => _habitLevel(d),
-              ),
-            ]),
+            child: GrassCalendar(
+              days: 84,
+              columns: 14,
+              endDate: today,
+              levelOf: (d) => _habitLevel(d),
+            ),
           ),
-          const SizedBox(height: 10),
+
+          const SectionLabel('기록'),
           AppCard(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('기록', style: t.labelSmall?.copyWith(letterSpacing: 0.5)),
-              const SizedBox(height: 6),
-              ..._recentRows(context),
-            ]),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _recentRows(context)),
           ),
         ],
       ),
@@ -150,20 +154,23 @@ class _DetailBody extends StatelessWidget {
       final o = controller.state.outcomes[d]?[habit.id];
       if (o != null) {
         // 프리즈일은 "지켜줬어요" — 결손이 아니라 방어로 서술 (11 §3.2)
-        final (label, color) = switch (o) {
-          Outcome.doneFull => ('완전 달성', c.leafDeep),
-          Outcome.donePartial => ('부분 달성 (2분 버전)', c.leafDeep),
-          Outcome.frozen => ('❄ 프리즈가 지켜줬어요', c.ice),
-          Outcome.recovered => ('회복 체크로 이어졌어요', c.leafDeep),
-          Outcome.pending => ('오늘 하면 이어져요', c.amber),
-          Outcome.missed => ('쉬어 간 날', c.mut),
+        final (icon, label, color) = switch (o) {
+          Outcome.doneFull => (Icons.check_circle_rounded, '완전 달성', c.leaf),
+          Outcome.donePartial => (Icons.check_circle_outline_rounded, '부분 달성 (2분 버전)', c.leaf),
+          Outcome.frozen => (Icons.ac_unit_rounded, '프리즈가 지켜줬어요', c.ice),
+          Outcome.recovered => (Icons.auto_awesome_rounded, '회복 체크로 이어졌어요', c.amber),
+          Outcome.pending => (Icons.schedule_rounded, '오늘 하면 이어져요', c.amber),
+          Outcome.missed => (Icons.circle_outlined, '쉬어 간 날', c.mut),
         };
         rows.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(children: [
-            Text(_shortDate(d), style: t.labelSmall),
-            const SizedBox(width: 10),
-            Text(label, style: t.bodySmall?.copyWith(color: color)),
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 9),
+            SizedBox(
+                width: 40,
+                child: Text(_shortDate(d), style: t.labelSmall)),
+            Expanded(child: Text(label, style: t.bodySmall?.copyWith(color: c.ink))),
           ]),
         ));
         shown++;
@@ -171,8 +178,11 @@ class _DetailBody extends StatelessWidget {
       d = AppClock.addDays(d, -1);
     }
     if (rows.isEmpty) {
-      rows.add(Text('내일이면 첫 기록이 생겨요.',
-          style: Theme.of(context).textTheme.bodySmall));
+      rows.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Text('내일이면 첫 기록이 생겨요.',
+            style: Theme.of(context).textTheme.bodySmall),
+      ));
     }
     return rows;
   }
