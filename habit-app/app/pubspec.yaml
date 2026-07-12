@@ -1,0 +1,36 @@
+name: root_app
+description: "루트(ROOT) — 하루 2분, 끊기지 않는 습관. 프리즈와 회복 체크가 완벽주의 붕괴를 막는 습관 앱."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Pretendard 번들(권장): https://github.com/orioncactus/pretendard 에서 OTF 를 받아
+  # assets/fonts/ 에 넣고 아래 주석을 해제한다. 없으면 시스템 서체로 폴백(theme.dart).
+  # fonts:
+  #   - family: Pretendard
+  #     fonts:
+  #       - asset: assets/fonts/Pretendard-Regular.otf
+  #       - asset: assets/fonts/Pretendard-Medium.otf
+  #         weight: 500
+  #       - asset: assets/fonts/Pretendard-SemiBold.otf
+  #         weight: 600
+  #       - asset: assets/fonts/Pretendard-Bold.otf
+  #         weight: 700
+  #       - asset: assets/fonts/Pretendard-ExtraBold.otf
+  #         weight: 800
